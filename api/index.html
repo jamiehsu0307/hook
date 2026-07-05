@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>釣魚演練郵件產生器</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=Syne:wght@400;500;700&family=JetBrains+Mono:wght@300;400&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #09090c;
+      --surface: #111116;
+      --surface-2: #16161d;
+      --border: #21212a;
+      --border-hi: #32323f;
+      --accent: #c08828;
+      --accent-glow: rgba(192, 136, 40, .13);
+      --accent-lit: #daa040;
+      --text: #dddde6;
+      --text-dim: #78788a;
+      --text-muted: #3e3e4a;
+      --green: #4ade80;
+      --red: #f87171;
+      --red-glow: rgba(248, 113, 113, .13);
+      --warn: #f59e0b;
+      --r: 5px;
+      --serif: 'Cormorant Garamond', Georgia, serif;
+      --sans: 'Syne', system-ui, sans-serif;
+      --mono: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+      opacity: .032;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    html {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+    }
+
+    body {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 56px 28px 96px;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: .4; }
+      50% { opacity: 1; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+      }
+    }
+
+    /* ── BANNER ── */
+    .banner {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: #2a1608;
+      border-bottom: 1px solid var(--warn);
+      color: var(--warn);
+      font: 700 .75rem/1 var(--sans);
+      letter-spacing: .08em;
+      text-align: center;
+      padding: 10px 16px;
+      margin: -56px -28px 40px;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      margin-bottom: 44px;
+      animation: fadeUp .5s ease both;
+    }
+
+    .eyebrow {
+      font: 700 .63rem/1 var(--sans);
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font: 300 3rem/1 var(--serif);
+      color: var(--text);
+      letter-spacing: -.01em;
+    }
+
+    h1 em {
+      font-style: italic;
+      color: var(--accent-lit);
+    }
+
+    .rule {
+      margin-top: 22px;
+      height: 1px;
+      background: linear-gradient(90deg, var(--accent) 0%, var(--border) 35%, transparent 80%);
+    }
+
+    /* ── FORM ── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px 16px;
+      animation: fadeUp .5s .07s ease both;
+    }
+
+    .field.span-2 { grid-column: 1 / -1; }
+
+    .lbl {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font: 700 .74rem/1 var(--sans);
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+
+    .lbl-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .select-wrap { position: relative; }
+
+    .select-wrap::after {
+      content: '▾';
+      position: absolute;
+      right: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      font-size: .7rem;
+      pointer-events: none;
+    }
+
+    select, textarea, input[type="number"], input[type="text"] {
+      width: 100%;
+      appearance: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 11px 36px 11px 13px;
+      font: 500 .875rem/1 var(--sans);
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    textarea, input[type="number"], input[type="text"] {
+      cursor: text;
+      padding: 11px 13px;
+      font: .875rem/1.6 var(--sans);
+    }
+
+    textarea { resize: vertical; }
+
+    select:focus, textarea:focus, input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    select option, select optgroup { background: var(--surface-2); }
+
+    /* ── ACTION ── */
+    .action-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 28px;
+      animation: fadeUp .5s .18s ease both;
+    }
+
+    #btn-generate {
+      padding: 11px 30px;
+      background: var(--accent);
+      color: #09090c;
+      border: none;
+      border-radius: var(--r);
+      font: 700 .72rem/1 var(--sans);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background .2s, box-shadow .2s, transform .1s;
+    }
+
+    #btn-generate:hover:not(:disabled) {
+      background: var(--accent-lit);
+      box-shadow: 0 0 22px var(--accent-glow);
+    }
+
+    #btn-generate:active:not(:disabled) { transform: scale(.96); }
+
+    #btn-generate:disabled {
+      background: var(--border-hi);
+      color: var(--text-muted);
+      cursor: not-allowed;
+    }
+
+    #status {
+      font: 300 .75rem/1 var(--mono);
+      color: var(--text-muted);
+      letter-spacing: .04em;
+    }
+
+    #status.running { color: var(--accent-lit); }
+    #status.done { color: var(--green); }
+    #status.err { color: var(--red); }
+
+    /* ── CARDS ── */
+    #cards {
+      margin-top: 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 2px solid var(--accent);
+      border-radius: 0 var(--r) var(--r) 0;
+      padding: 22px 22px 22px 24px;
+      animation: fadeUp .4s ease both;
+    }
+
+    .card.is-error { border-left-color: var(--red); }
+
+    .card-badges {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      font: 700 .62rem/1 var(--sans);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--accent-lit);
+      background: var(--accent-glow);
+      border: 1px solid var(--border-hi);
+      border-radius: 3px;
+      padding: 4px 9px;
+    }
+
+    .badge.sim {
+      color: var(--warn);
+      background: rgba(245, 158, 11, .1);
+    }
+
+    .card-subject {
+      font: 600 1.15rem/1.4 var(--serif);
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .card-sender {
+      font: 300 .82rem/1.5 var(--mono);
+      color: var(--text-dim);
+      margin-bottom: 16px;
+    }
+
+    .card-body {
+      font: 300 .88rem/1.8 var(--sans);
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .payload-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font: 500 .82rem/1.5 var(--sans);
+      color: var(--accent-lit);
+      margin-bottom: 8px;
+    }
+
+    .payload-row .k {
+      color: var(--text-dim);
+      font: 700 .62rem/1 var(--sans);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .qr-placeholder {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font: 500 .78rem/1 var(--mono);
+      color: var(--text-dim);
+      border: 1px dashed var(--border-hi);
+      border-radius: var(--r);
+      padding: 6px 10px;
+      margin-bottom: 8px;
+    }
+
+    .redflags {
+      margin-top: 14px;
+    }
+
+    .redflags ul {
+      list-style: none;
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .redflags li {
+      font: 300 .82rem/1.6 var(--sans);
+      color: var(--text-dim);
+      padding-left: 16px;
+      position: relative;
+    }
+
+    .redflags li::before {
+      content: '⚑';
+      position: absolute;
+      left: 0;
+      color: var(--warn);
+      font-size: .72rem;
+      top: 3px;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .btn-small {
+      padding: 7px 16px;
+      background: transparent;
+      border: 1px solid var(--border-hi);
+      border-radius: var(--r);
+      font: 700 .68rem/1 var(--sans);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: border-color .15s, color .15s;
+    }
+
+    .btn-small:hover { border-color: var(--accent); color: var(--accent-lit); }
+
+    .card-loading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font: 300 .82rem/1 var(--mono);
+      color: var(--text-dim);
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 1.1s ease-in-out infinite;
+    }
+
+    .card-error-msg {
+      font: 500 .84rem/1.6 var(--sans);
+      color: var(--red);
+      margin-bottom: 14px;
+    }
+
+    /* ── BOTTOM BAR ── */
+    #bottom-bar {
+      margin-top: 28px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+    }
+
+    #bottom-count {
+      font: 300 .78rem/1 var(--mono);
+      color: var(--text-dim);
+    }
+
+    .btn-dl {
+      padding: 8px 18px;
+      background: var(--accent);
+      border: none;
+      border-radius: var(--r);
+      font: 700 .68rem/1 var(--sans);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: #09090c;
+      cursor: pointer;
+      transition: background .15s;
+    }
+
+    .btn-dl:hover { background: var(--accent-lit); }
+
+    @media (max-width: 640px) {
+      .form-grid { grid-template-columns: 1fr; }
+      body { padding: 44px 16px 72px; }
+      .banner { margin: -44px -16px 32px; }
+      h1 { font-size: 2.4rem; }
+      .action-row { flex-direction: column; align-items: flex-start; }
+      #btn-generate { width: 100%; text-align: center; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="banner">⚠️ 演練用 / SIMULATION ONLY — 內部資安意識訓練教材，非真實攻擊工具</div>
+
+  <header class="header">
+    <div class="eyebrow">Phishing Simulation Content Generator</div>
+    <h1>釣魚演練<em>郵件產生器</em></h1>
+    <div class="rule"></div>
+  </header>
+
+  <main>
+    <div class="form-grid">
+      <div class="field span-2">
+        <div class="lbl"><span class="lbl-dot"></span>模型</div>
+        <div class="select-wrap">
+          <select id="model"><option value="">載入中…</option></select>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="lbl"><span class="lbl-dot"></span>情境（scenario）</div>
+        <div class="select-wrap"><select id="scenario"></select></div>
+      </div>
+
+      <div class="field">
+        <div class="lbl"><span class="lbl-dot"></span>傳遞手法（mechanism）</div>
+        <div class="select-wrap"><select id="mechanism"></select></div>
+      </div>
+
+      <div class="field">
+        <div class="lbl"><span class="lbl-dot"></span>社交工程槓桿（lever）</div>
+        <div class="select-wrap"><select id="lever"></select></div>
+      </div>
+
+      <div class="field">
+        <div class="lbl"><span class="lbl-dot"></span>誘導行動（action）</div>
+        <div class="select-wrap"><select id="action"></select></div>
+      </div>
+
+      <div class="field">
+        <div class="lbl"><span class="lbl-dot"></span>難度</div>
+        <div class="select-wrap"><select id="difficulty"></select></div>
+      </div>
+
+      <div class="field">
+        <div class="lbl"><span class="lbl-dot"></span>生成封數（1–5）</div>
+        <input id="count" type="number" min="1" max="5" value="1">
+      </div>
+
+      <div class="field span-2">
+        <div class="lbl"><span class="lbl-dot"></span>情境補充（組織名稱／常用系統／部門）</div>
+        <textarea id="context" rows="2" placeholder="例如：某科技公司、常用 M365 與 Slack、財務部"></textarea>
+      </div>
+    </div>
+
+    <div class="action-row">
+      <button id="btn-generate">生成演練信</button>
+      <span id="status"></span>
+    </div>
+
+    <div id="cards"></div>
+
+    <div id="bottom-bar">
+      <span id="bottom-count"></span>
+      <button class="btn-dl" id="btn-download-all">下載全部 JSON</button>
+    </div>
+  </main>
+
+  <script>
+    // ── 靜態資料（對應 task.md §6.1/§6.2/§5.1/§7/§8） ──
+
+    // System prompt 改由 GET /system-prompt 讀取 api/system_prompt.md，避免兩邊內容各自維護、漂移不同步
+    let SYSTEM_PROMPT = '';
+
+    const SCENARIOS = [
+      { group: '帳號 / IT 安全', items: [
+        ['password_reset', '密碼即將到期，需重設'],
+        ['saas_login_alert', '偵測到異常/陌生裝置登入'],
+        ['mfa_reenroll', 'MFA 需重新設定/驗證'],
+        ['mailbox_quota', '信箱容量已滿，需清理否則停用'],
+        ['account_suspension', '帳號違規將被停用'],
+        ['security_policy_update', '資安政策更新，需重新登入確認'],
+      ]},
+      { group: 'HR / 人資', items: [
+        ['hr_benefit', '福利/年終/獎金相關確認'],
+        ['payroll_update', '薪資帳戶資料需確認/更新'],
+        ['performance_review', '績效考核表單需填寫'],
+        ['policy_ack', '新規範/員工手冊需簽署確認'],
+        ['org_survey', '員工問卷/滿意度調查'],
+      ]},
+      { group: '財務 / 供應商', items: [
+        ['invoice_payment', '逾期發票/待付款'],
+        ['vendor_bank_change', '供應商變更收款帳號（典型 BEC）'],
+        ['expense_reimburse', '費用報銷/退款'],
+        ['purchase_order', '採購訂單確認'],
+        ['tax_document', '稅務文件/扣繳憑單'],
+      ]},
+      { group: '主管 / BEC', items: [
+        ['ceo_urgent_request', '假冒主管緊急交辦（轉帳/機密）'],
+        ['confidential_project', '機密專案/併購，要求保密勿聲張'],
+        ['gift_card_request', '主管要求代購禮品卡'],
+      ]},
+      { group: '外部服務 / 品牌', items: [
+        ['cloud_doc_share', '有人分享文件給你（SharePoint/Drive/DocuSign）'],
+        ['collab_mention', '協作工具通知（被 @ 或指派任務）'],
+        ['subscription_renew', '訂閱到期/付款失敗'],
+        ['delivery_issue', '包裹配送地址有誤'],
+        ['calendar_invite', '會議邀請需接受/加入'],
+      ]},
+      { group: '內部營運 / 一般', items: [
+        ['it_helpdesk', 'IT 服務台通知'],
+        ['internal_announce', '內部系統上線/一般公告'],
+        ['voicemail_notification', '語音留言通知'],
+        ['printer_scan', '掃描件已送達（多功能事務機）'],
+      ]},
+    ];
+
+    const MECHANISMS = [
+      ['link', '連結導向假登入頁'],
+      ['attachment', '惡意附件'],
+      ['qr_code', 'QR code 釣魚（quishing）'],
+      ['bec_no_payload', '純文字社交，無連結無附件'],
+      ['callback', '回撥假客服電話（TOAD）'],
+      ['oauth_consent', '誘導授權第三方 App'],
+    ];
+
+    const LEVERS = [
+      ['urgency', '製造時間壓力'],
+      ['authority', '假冒有權者或官方'],
+      ['fear', '觸發損失或懲罰恐懼'],
+      ['curiosity', '引發好奇'],
+      ['greed', '以獎金退款利誘'],
+      ['trust', '冒用熟悉的人或品牌'],
+    ];
+
+    const ACTIONS = [
+      ['click_link', '點擊連結'],
+      ['enter_credentials', '輸入帳號密碼'],
+      ['open_attachment', '開啟附件'],
+      ['scan_qr', '掃描 QR Code'],
+      ['reply', '直接回信'],
+      ['call_number', '回撥電話'],
+      ['approve_oauth', '授權第三方應用程式'],
+    ];
+
+    const DIFFICULTIES = [
+      ['1', 'L1 明顯 — 錯誤網域、通用稱呼、強烈急迫'],
+      ['2', 'L2 中等 — lookalike 網域、情境合理'],
+      ['3', 'L3 細膩 — 個人化口吻、破綻最少'],
+    ];
+
+    // §5.1 mechanism 相依欄位對應表
+    const MECH_RULES = {
+      link: { link: true, tracking: true, callback: false, oauth: false, qr: false },
+      attachment: { link: true, tracking: true, callback: false, oauth: false, qr: false },
+      qr_code: { link: true, tracking: true, callback: false, oauth: false, qr: true },
+      oauth_consent: { link: true, tracking: true, callback: false, oauth: true, qr: false },
+      bec_no_payload: { link: false, tracking: false, callback: false, oauth: false, qr: false },
+      callback: { link: false, tracking: false, callback: true, oauth: false, qr: false },
+    };
+
+    // 5 個範例（task.md §6.2 <example>），依 mechanism 匹配後作為 few-shot 帶入 prompt
+    const EXAMPLES = [
+      {
+        scenario: "saas_login_alert", delivery_mechanism: "link", social_engineering_lever: "urgency",
+        desired_action: "enter_credentials", difficulty: 1,
+        lever_manifestation: "全篇以「24 小時內未完成驗證即永久停權」反覆製造急迫感，逼使用者不加思索立即點擊連結。",
+        subject: "【重要】偵測到異常登入，請於24小時內完成身分驗證！！",
+        sender_display_name: "Microsoft 帳戶安全中心",
+        sender_address: "security-alert@micros0ft-support.example.com",
+        body: "親愛的用戶，\n\n您的帳戶於今日凌晨在不明地點被偵測到異常登入嘗試。為保護您的帳戶安全，請立即點擊下方連結完成身分驗證。\n\n若未於24小時內完成驗證，您的帳戶將被永久停權，所有資料將無法復原！！\n\n{{TRACKING_URL}}\n\nMicrosoft 帳戶安全團隊 敬上",
+        link_text: "立即驗證帳戶", callback_number: "", oauth_app_name: "",
+        red_flags: [
+          "寄件網域為 micros0ft-support.example.com（0 取代 o 的 lookalike），非官方 microsoft.com 網域",
+          "使用「親愛的用戶」等通用稱呼，未指名道姓",
+          "以「24 小時內未驗證即永久停權」製造強烈時間壓力",
+          "結尾使用「！！」等誇張標點，語氣不符官方通知慣例",
+          "要求直接點擊連結輸入帳密驗證身分，官方通知不會如此要求",
+        ],
+      },
+      {
+        scenario: "collab_mention", delivery_mechanism: "oauth_consent", social_engineering_lever: "authority",
+        desired_action: "approve_oauth", difficulty: 2,
+        lever_manifestation: "假冒 IT 資訊安全處以官方政策口吻要求員工立即授權第三方應用程式存取帳號，利用職權施壓、不容質疑。",
+        subject: "「IT 資訊安全處」通知：Slack 協作工具權限升級驗證",
+        sender_display_name: "IT 資訊安全處",
+        sender_address: "it-security@corp-workspace.example.com",
+        body: "您好，\n\n因應公司資安政策更新，所有 Slack 使用者須於本週內完成第三方應用程式「WorkSync Connector」的權限授權，以維持協作工具正常運作。\n\n請點擊下方連結完成授權：\n{{TRACKING_URL}}\n\n如未於期限內完成，您的協作工具帳號權限將受影響。\n\nIT 資訊安全處",
+        link_text: "前往授權頁面", callback_number: "", oauth_app_name: "WorkSync Connector",
+        red_flags: [
+          "寄件網域為示意 lookalike（corp-workspace.example.com），非公司真實網域",
+          "僅以部門名稱「IT 資訊安全處」署名，無具體聯絡窗口或人員",
+          "要求授權一個來源不明的第三方 App「WorkSync Connector」存取帳號",
+          "以「不完成將影響帳號權限」施加權威壓力，且未提供人工查證管道",
+        ],
+      },
+      {
+        scenario: "account_suspension", delivery_mechanism: "callback", social_engineering_lever: "fear",
+        desired_action: "call_number", difficulty: 2,
+        lever_manifestation: "以帳號遭系統偵測到違規使用、即將停權為由，觸發使用者對權益受損的恐懼，促使立即回撥電話「確認身份」。",
+        subject: "帳號異常使用警示：如未處理將於 48 小時後停權",
+        sender_display_name: "企業帳戶服務中心",
+        sender_address: "account-service@corp-portal.example.com",
+        body: "您好，\n\n系統偵測到您的帳號有異常使用情形，為保障您的權益，請於 48 小時內回撥 0800-123-456 與客服人員確認身份。\n\n逾期未處理，您的帳號將依規定暫停使用，需另行申請復原。\n\n企業帳戶服務中心",
+        link_text: "", callback_number: "0800-123-456", oauth_app_name: "",
+        red_flags: [
+          "官方帳戶服務不會僅以電話回撥方式要求確認身份",
+          "未指名具體違規內容，僅籠統稱「異常使用情形」",
+          "以停權作為要脅施加恐懼與壓力，且期限刻意壓縮至 48 小時",
+          "寄件網域為示意網域（corp-portal.example.com），非公司內部網域",
+          "未提供任何官方替代管道（如公司內部系統）供員工自行查證",
+        ],
+      },
+      {
+        scenario: "ceo_urgent_request", delivery_mechanism: "bec_no_payload", social_engineering_lever: "trust",
+        desired_action: "reply", difficulty: 3,
+        lever_manifestation: "假借與員工熟識的執行長口吻，以簡短、個人化、看似出差中匆忙撰寫的語氣建立信任感，誘導對方直接回信協助處理事項，全程不使用連結或附件以降低戒心。",
+        subject: "Re: 這件事先別讓其他人知道",
+        sender_display_name: "David Chen",
+        sender_address: "david.chen@corp-holdings.example.com",
+        body: "我現在在機場趕飛機，方便的話先回信給我，這件事先別讓其他人知道，我等等落地再詳細說明，謝謝。",
+        link_text: "", callback_number: "", oauth_app_name: "",
+        red_flags: [
+          "寄件網域為示意 lookalike（corp-holdings.example.com），與正常內部網域不完全一致",
+          "以「先別讓其他人知道」刻意阻斷員工向他人求證或通報的機會",
+          "全程未提供任何可供查證的具體事項，僅以匆忙語氣要求員工直接回信配合",
+        ],
+      },
+      {
+        scenario: "delivery_issue", delivery_mechanism: "qr_code", social_engineering_lever: "curiosity",
+        desired_action: "scan_qr", difficulty: 1,
+        lever_manifestation: "以「包裹地址有誤、內含商品待確認」引發好奇心，誘導使用者掃描 QR code 一探究竟並重新確認個資。",
+        subject: "您的包裹因地址問題無法配送，內含商品待確認",
+        sender_display_name: "快遞包裹通知中心",
+        sender_address: "notice@express-delivery.example.com",
+        body: "您好，\n\n您的包裹因收件地址資訊有誤，目前無法完成配送。請掃描下方 QR Code（連結：{{TRACKING_URL}}）確認並更新收件地址，逾期未處理包裹將退回原廠。\n\n[QR Code（演練佔位）]\n\n快遞包裹通知中心",
+        link_text: "掃描 QR Code 確認地址", callback_number: "", oauth_app_name: "",
+        red_flags: [
+          "寄件網域為示意網域（express-delivery.example.com），非任何真實物流業者官方網域",
+          "未提供包裹追蹤編號等可供查證的具體資訊",
+          "以模糊的「地址問題」搭配「逾期將退回」製造急迫感與好奇心",
+          "要求透過來路不明的 QR Code 重新確認個資，而非官方 App 或官網查詢",
+        ],
+      },
+    ];
+
+    const SCENARIO_LABELS = Object.fromEntries(SCENARIOS.flatMap(g => g.items));
+
+    // ── DOM 初始化 ──
+
+    const $ = (id) => document.getElementById(id);
+    const modelSel = $('model'), scenarioSel = $('scenario'), mechanismSel = $('mechanism'),
+      leverSel = $('lever'), actionSel = $('action'), difficultySel = $('difficulty'),
+      countInput = $('count'), contextInput = $('context'),
+      generateBtn = $('btn-generate'), statusEl = $('status'), cardsEl = $('cards'),
+      bottomBar = $('bottom-bar'), bottomCount = $('bottom-count'), downloadAllBtn = $('btn-download-all');
+
+    function fillSelect(sel, pairs) {
+      sel.innerHTML = pairs.map(([v, label]) => `<option value="${v}">${label}</option>`).join('');
+    }
+
+    function fillScenarioSelect() {
+      scenarioSel.innerHTML = SCENARIOS.map(g =>
+        `<optgroup label="${g.group}">` +
+        g.items.map(([v, label]) => `<option value="${v}">${label}</option>`).join('') +
+        `</optgroup>`
+      ).join('');
+    }
+
+    fillScenarioSelect();
+    fillSelect(mechanismSel, MECHANISMS);
+    fillSelect(leverSel, LEVERS);
+    fillSelect(actionSel, ACTIONS);
+    fillSelect(difficultySel, DIFFICULTIES);
+
+    async function loadTags() {
+      const res = await fetch('/tags');
+      return res.json();
+    }
+
+    async function loadSystemPrompt() {
+      const res = await fetch('/system-prompt');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.text();
+    }
+
+    (async () => {
+      const [tagsRes, promptRes] = await Promise.allSettled([loadTags(), loadSystemPrompt()]);
+
+      if (tagsRes.status === 'fulfilled') {
+        const models = tagsRes.value.models ?? [];
+        modelSel.innerHTML = models.length
+          ? models.map(m => `<option value="${m.name}">${m.name}</option>`).join('')
+          : '<option value="">（無可用模型）</option>';
+      } else {
+        modelSel.innerHTML = '<option value="">無法連線至 API</option>';
+      }
+
+      if (promptRes.status === 'fulfilled') {
+        SYSTEM_PROMPT = promptRes.value;
+      } else {
+        console.error('無法載入 /system-prompt：', promptRes.reason);
+      }
+    })();
+
+    function setStatus(msg, cls = '') {
+      statusEl.textContent = msg;
+      statusEl.className = cls;
+    }
+
+    // ── Prompt / Schema 組裝（對應 task.md §5 / §5.1 / §6.1 / §6.2） ──
+
+    function buildSchema() {
+      return {
+        type: 'object',
+        properties: {
+          scenario: { type: 'string', enum: SCENARIOS.flatMap(g => g.items.map(i => i[0])) },
+          delivery_mechanism: { type: 'string', enum: MECHANISMS.map(m => m[0]) },
+          social_engineering_lever: { type: 'string', enum: LEVERS.map(l => l[0]) },
+          desired_action: { type: 'string', enum: ACTIONS.map(a => a[0]) },
+          difficulty: { type: 'integer', enum: [1, 2, 3] },
+          lever_manifestation: { type: 'string' },
+          subject: { type: 'string' },
+          sender_display_name: { type: 'string' },
+          sender_address: { type: 'string' },
+          body: { type: 'string' },
+          link_text: { type: 'string' },
+          callback_number: { type: 'string' },
+          oauth_app_name: { type: 'string' },
+          red_flags: { type: 'array', items: { type: 'string' }, minItems: 1 },
+        },
+        required: ['scenario', 'delivery_mechanism', 'social_engineering_lever', 'desired_action',
+          'difficulty', 'lever_manifestation', 'subject', 'sender_display_name', 'sender_address',
+          'body', 'link_text', 'callback_number', 'oauth_app_name', 'red_flags'],
+      };
+    }
+
+    function buildUserPrompt(p) {
+      // ponytail: 只帶「mechanism 完全匹配」的單一範例，不塞全部 5 個，省 token 且避免不相關範例干擾
+      const example = EXAMPLES.find(e => e.delivery_mechanism === p.mechanism);
+      const exampleBlock = example
+        ? JSON.stringify(example, null, 2)
+        : '（此傳遞手法無對應範例，請直接依規則與 JSON Schema 產生。）';
+
+      return `<task>依下列規格產生 1 封繁體中文演練釣魚信。</task>
+
+<spec>
+scenario: ${p.scenario}（${SCENARIO_LABELS[p.scenario] || ''}）
+delivery_mechanism: ${p.mechanism}
+social_engineering_lever: ${p.lever}
+desired_action: ${p.action}
+difficulty: ${p.difficulty}
+context: ${p.context || '（無特別指定）'}
+</spec>
+
+<enums>
+social_engineering_lever（六選一）：
+  urgency=製造時間壓力 / authority=假冒有權者或官方 / fear=觸發損失或懲罰恐懼 /
+  curiosity=引發好奇 / greed=以獎金退款利誘 / trust=冒用熟悉的人或品牌
+desired_action（擇一）：
+  click_link / enter_credentials / open_attachment / scan_qr / reply / call_number / approve_oauth
+delivery_mechanism（擇一）：
+  link / attachment / qr_code / bec_no_payload / callback / oauth_consent
+</enums>
+
+<constraints>
+1. body 必須真正體現指定的 lever 並誘導指定的 action，不可名實不符。
+2. 依 difficulty 調整破綻明顯度，至少保留 1 個可教學破綻。
+3. 連結一律用 {{TRACKING_URL}}；寄件與連結網域用示意網域（*.example.com 或 lookalike）。
+4. 【衝突處理－簡單版】若 delivery_mechanism 與 desired_action 矛盾，以 delivery_mechanism 為準，
+   自動調整 action 並在 red_flags 之外不另報錯。範例：
+   - bec_no_payload（無連結無附件）→ action 收斂為 reply 或 call_number，不得用 click_link。
+   - qr_code → action 對應 scan_qr。
+   - oauth_consent → action 對應 approve_oauth。
+5. 【mechanism 相依欄位】link_text / callback_number / oauth_app_name 依下列規則填寫，不適用的欄位填空字串 ""：
+   - link / attachment / qr_code / oauth_consent：填 link_text，body 含 {{TRACKING_URL}}。
+   - oauth_consent 另外要填 oauth_app_name（示意第三方 App 名稱）。
+   - callback：填 callback_number（示意電話），body 不含 {{TRACKING_URL}}。
+   - bec_no_payload：link_text / callback_number / oauth_app_name 皆留空，body 不含 {{TRACKING_URL}}。
+</constraints>
+
+<output_format>
+只輸出 JSON，不要 markdown 圍欄，欄位依指定的 JSON Schema。四個分類欄位回填指定值，
+lever_manifestation 用一句話說明 body 如何體現該槓桿。mechanism 相依欄位依上述規則填寫或留空。
+</output_format>
+
+<example>
+${exampleBlock}
+</example>`;
+    }
+
+    // ── SSE 串流 / JSON 解析 ──
+
+    function stripJsonFence(raw) {
+      return raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+    }
+
+    function classifyParseFailure(cleaned) {
+      // ponytail: 簡單啟發式，不做真正的 JSON 修復。
+      // 空字串（實測過：thinking 模型把 num_predict 全部用在 thinking、content 一個字都沒吐出來、
+      // 串流中途以 done:false 斷掉）語意上不可能是「拒答」——拒答一定有文字內容，歸類為 truncated
+      // 才對，重試時調高 num_predict 才有意義；看起來像被砍斷的物件同樣視為截斷，其餘視為拒答。
+      if (!cleaned) return 'truncated';
+      return cleaned.startsWith('{') ? 'truncated' : 'refused';
+    }
+
+    async function streamQuery(model, params, onThinking, options) {
+      const payload = {
+        model,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: buildUserPrompt(params) },
+        ],
+        stream: true,
+        format: buildSchema(),
+      };
+      if (options) payload.options = options;
+
+      let resp;
+      try {
+        resp = await fetch('/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } catch (e) {
+        throw { kind: 'connection', message: e.message };
+      }
+      if (!resp.ok) throw { kind: 'connection', message: `HTTP ${resp.status}` };
+
+      const reader = resp.body.getReader();
+      const dec = new TextDecoder();
+      let buf = '', content = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const chunk = JSON.parse(line.slice(6));
+            if (chunk.message?.thinking) onThinking();
+            if (chunk.message?.content) content += chunk.message.content;
+          } catch { /* skip malformed SSE line */ }
+        }
+      }
+
+      const cleaned = stripJsonFence(content);
+      try {
+        return { ok: true, data: JSON.parse(cleaned) };
+      } catch {
+        return { ok: false, kind: classifyParseFailure(cleaned), raw: cleaned };
+      }
+    }
+
+    // ── 卡片渲染 ──
+
+    const cardStates = []; // { status, model, params, data, errorKind }
+
+    function el(tag, cls, text) {
+      const e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (text !== undefined) e.textContent = text;
+      return e;
+    }
+
+    function renderCard(i) {
+      const state = cardStates[i];
+      const card = document.getElementById(`card-${i}`);
+      card.innerHTML = '';
+      card.classList.toggle('is-error', state.status === 'error');
+
+      if (state.status === 'loading') {
+        const loading = el('div', 'card-loading');
+        loading.appendChild(el('span', 'dot'));
+        loading.appendChild(el('span', null, state.thinking ? '思考中…' : '生成中…'));
+        card.appendChild(loading);
+        return;
+      }
+
+      if (state.status === 'error') {
+        const msgs = {
+          connection: '連線失敗，請確認後端服務是否正常。',
+          truncated: '生成內容被截斷（可能超出長度限制），重試時會自動調高長度限制。',
+          refused: '此模型可能拒絕生成演練內容，建議換一個 model 再試。',
+        };
+        card.appendChild(el('div', 'card-error-msg', msgs[state.errorKind] || '生成失敗。'));
+        const retryBtn = el('button', 'btn-small', '重試');
+        retryBtn.addEventListener('click', () => retryCard(i));
+        card.appendChild(retryBtn);
+        return;
+      }
+
+      // status === 'done'
+      const d = state.data;
+      const rules = MECH_RULES[d.delivery_mechanism] || {};
+
+      const badges = el('div', 'card-badges');
+      badges.appendChild(el('span', 'badge', `難度 L${d.difficulty}`));
+      badges.appendChild(el('span', 'badge', SCENARIO_LABELS[d.scenario] || d.scenario));
+      badges.appendChild(el('span', 'badge sim', 'X-Simulation: true'));
+      card.appendChild(badges);
+
+      card.appendChild(el('div', 'card-subject', d.subject));
+      card.appendChild(el('div', 'card-sender', `${d.sender_display_name} <${d.sender_address}>`));
+      card.appendChild(el('div', 'card-body', d.body));
+
+      if (rules.qr) {
+        card.appendChild(el('div', 'qr-placeholder', '🔲 QR Code（演練佔位，不產生真實圖檔）'));
+      }
+      if (rules.link && d.link_text) {
+        const row = el('div', 'payload-row');
+        row.appendChild(el('span', 'k', '連結：'));
+        const link = el('span', null, d.link_text);
+        link.title = '實際指向 {{TRACKING_URL}} 佔位符';
+        row.appendChild(link);
+        card.appendChild(row);
+      }
+      if (rules.callback && d.callback_number) {
+        const row = el('div', 'payload-row');
+        row.appendChild(el('span', 'k', '回撥電話：'));
+        row.appendChild(el('span', null, d.callback_number));
+        card.appendChild(row);
+      }
+      if (rules.oauth && d.oauth_app_name) {
+        const row = el('div', 'payload-row');
+        row.appendChild(el('span', 'k', '請求授權的 App：'));
+        row.appendChild(el('span', null, d.oauth_app_name));
+        card.appendChild(row);
+      }
+
+      const flagsWrap = el('div', 'redflags');
+      flagsWrap.appendChild(el('div', 'lbl', 'Red Flags'));
+      const ul = el('ul');
+      (d.red_flags || []).forEach(f => ul.appendChild(el('li', null, f)));
+      flagsWrap.appendChild(ul);
+      card.appendChild(flagsWrap);
+
+      const actions = el('div', 'card-actions');
+      const copyBtn = el('button', 'btn-small', '複製 JSON');
+      copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(JSON.stringify(d, null, 2));
+        copyBtn.textContent = '已複製';
+        setTimeout(() => (copyBtn.textContent = '複製 JSON'), 1200);
+      });
+      actions.appendChild(copyBtn);
+      card.appendChild(actions);
+    }
+
+    function createPlaceholderCard(i) {
+      const card = el('div', 'card');
+      card.id = `card-${i}`;
+      cardsEl.appendChild(card);
+      renderCard(i);
+    }
+
+    async function runGeneration(i, overrideOptions) {
+      const state = cardStates[i];
+      state.status = 'loading';
+      state.thinking = false;
+      renderCard(i);
+      try {
+        const result = await streamQuery(state.model, state.params, () => {
+          state.thinking = true;
+          renderCard(i);
+        }, overrideOptions);
+        if (result.ok) {
+          state.status = 'done';
+          state.data = result.data;
+        } else {
+          state.status = 'error';
+          state.errorKind = result.kind;
+        }
+      } catch (e) {
+        state.status = 'error';
+        state.errorKind = e.kind || 'connection';
+      }
+      renderCard(i);
+      updateBottomBar();
+    }
+
+    function retryCard(i) {
+      const overrideOptions = cardStates[i].errorKind === 'truncated' ? { num_predict: 3000 } : undefined;
+      runGeneration(i, overrideOptions);
+    }
+
+    function updateBottomBar() {
+      const doneCount = cardStates.filter(s => s.status === 'done').length;
+      bottomBar.style.display = cardStates.length ? 'flex' : 'none';
+      bottomCount.textContent = `已成功生成 ${doneCount} / ${cardStates.length} 封`;
+    }
+
+    downloadAllBtn.addEventListener('click', () => {
+      const results = cardStates.filter(s => s.status === 'done').map(s => s.data);
+      const blob = new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' });
+      const a = Object.assign(document.createElement('a'), {
+        href: URL.createObjectURL(blob),
+        download: `phishing_sim_${Date.now()}.json`,
+      });
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    generateBtn.addEventListener('click', async () => {
+      const model = modelSel.value;
+      if (!model) { alert('請先選擇模型'); return; }
+      if (!SYSTEM_PROMPT) { alert('System Prompt 尚未載入完成，請稍後再試或重新整理頁面'); return; }
+
+      const count = Math.min(5, Math.max(1, parseInt(countInput.value, 10) || 1));
+      const params = {
+        scenario: scenarioSel.value,
+        mechanism: mechanismSel.value,
+        lever: leverSel.value,
+        action: actionSel.value,
+        difficulty: parseInt(difficultySel.value, 10),
+        context: contextInput.value.trim(),
+      };
+
+      cardsEl.innerHTML = '';
+      cardStates.length = 0;
+      generateBtn.disabled = true;
+
+      for (let i = 0; i < count; i++) {
+        setStatus(`生成中… (${i + 1}/${count})`, 'running');
+        cardStates[i] = { status: 'loading', model, params };
+        createPlaceholderCard(i);
+        await runGeneration(i); // 逐封呼叫：一封做完才做下一封
+      }
+
+      const failCount = cardStates.filter(s => s.status === 'error').length;
+      setStatus(failCount ? `完成，${failCount} 封失敗可個別重試` : '完成', failCount ? 'err' : 'done');
+      generateBtn.disabled = false;
+    });
+
+    // ── 最小自我檢查（ponytail: 無測試框架，手動於 console 執行 __selfTest() 驗證核心邏輯） ──
+    window.__selfTest = function () {
+      console.assert(Object.keys(MECH_RULES).length === 6, 'MECH_RULES 應涵蓋 6 種 mechanism');
+      console.assert(buildSchema().required.length === 14, 'schema 應有 14 個 required 欄位');
+      console.assert(stripJsonFence('```json\n{"a":1}\n```') === '{"a":1}', 'fence 剝除失敗');
+      console.assert(classifyParseFailure('{"a": 1, "b": ') === 'truncated', '應判定為 truncated');
+      console.assert(classifyParseFailure('我無法協助生成此類內容。') === 'refused', '應判定為 refused');
+      console.assert(classifyParseFailure('') === 'truncated', '空字串應判定為 truncated（實測 thinking 模型耗盡預算會發生）');
+      console.log('__selfTest 全部通過');
+    };
+  </script>
+</body>
+
+</html>

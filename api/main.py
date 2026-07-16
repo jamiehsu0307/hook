@@ -398,3 +398,7 @@ async def ingest_document(file: UploadFile = File(...)):
 async def index():
     return FileResponse("index.html")
 
+@app.get("/style.css")
+async def style():
+    return FileResponse("style.css", media_type="text/css")
+

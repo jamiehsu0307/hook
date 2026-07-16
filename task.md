@@ -436,6 +436,8 @@ Claude Code 可將兩表分別做成前端兩個下拉選單的資料來源。
 - 文案用使用者語言（例：按鈕寫「生成演練信」而非「Submit」）。
 - 沿用 `api/index.html` 既有的設計系統與 streaming/dialog 寫法（見 §3），不必重新套 `frontend-design` skill。
 - **API 呼叫用相對路徑**（或 `location.origin`），因為頁面就是由 `main.py` 同源 served。不要沿用舊 `index.html` 裡 `` `http://${location.hostname}:7000` `` 這種寫死 port 的寫法（該 port 目前也已經是舊資訊，實際 host port 由部署時決定）。
+- **日夜模式切換**（本次追加，原規格未列）：標題列右上角圓形按鈕（☾/☀）切換 `<html data-theme>`，色彩皆走既有 CSS variables，故只需在 `:root[data-theme="light"]` 覆寫一組淺色值即可，不需另寫元件樣式。預設值取 `localStorage.theme`，沒有則 fallback 到 `prefers-color-scheme`；選擇後寫回 `localStorage` 記住偏好。
+- **「隨機組合」按鈕**（本次追加，原規格未列）：一鍵隨機帶入 `scenario` / `delivery_mechanism` / `social_engineering_lever` / `desired_action` 四個下拉選單，方便快速試跑不同組合；不動 `difficulty`、`count`、`context`、`model`。
 
 ---
 

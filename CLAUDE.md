@@ -9,7 +9,7 @@ A phishing-simulation email content generator for authorized internal security-a
 1. **Phishing simulation generator** — `api/index.html` is the actual product: a single-page vanilla-JS app where a trainer picks a scenario/delivery-mechanism/social-engineering-lever/action/difficulty combo, and the backend proxies a streaming, guided-decoding chat request to a local **Ollama** server to generate one simulated phishing email per click. **`task.md` is the authoritative spec** for this feature (data contract, prompt design, guardrails, acceptance criteria) — read it before changing `index.html`'s generation logic; this file only covers things `task.md` doesn't.
 2. **Document OCR ingestion** — async job pipeline that converts uploaded PDFs/images to text via RapidOCR + `pdf2image`/`tesseract`. Unrelated to the generator; shares the process only because it's the same FastAPI app.
 
-There used to be a third capability (emotion-tagging text classifier + title generator) — it has been removed. `api/xlmr-classifier/` (a 1.1GB fine-tuned model dir) and `api/title.jsonl` are now orphaned leftovers on disk with no code referencing them; `api/system_prompt_old.md` is the old emotion-tagging prompt, kept only for reference.
+There used to be a third capability (emotion-tagging text classifier + title generator) — it has been removed. `api/xlmr-classifier/` (a 1.1GB fine-tuned model dir) and `api/title.jsonl` are now orphaned leftovers on disk with no code referencing them; the old emotion-tagging prompt (`api/system_prompt_old.md`) has been deleted.
 
 ## Commands
 

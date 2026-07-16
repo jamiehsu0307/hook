@@ -20,6 +20,7 @@
       --accent: #c08828;
       --accent-glow: rgba(192, 136, 40, .13);
       --accent-lit: #daa040;
+      --on-accent: #09090c;
       --text: #dddde6;
       --text-dim: #78788a;
       --text-muted: #3e3e4a;
@@ -31,6 +32,26 @@
       --serif: 'Cormorant Garamond', Georgia, serif;
       --sans: 'Syne', system-ui, sans-serif;
       --mono: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    /* 白天模式 — 同一份文件搬到日光下讀，琥珀印章色不變，環境從暗房翻成桌燈紙面 */
+    :root[data-theme="light"] {
+      --bg: #ecedf0;
+      --surface: #ffffff;
+      --surface-2: #f5f6f8;
+      --border: #dcdee2;
+      --border-hi: #c5c8ce;
+      --accent: #7d4e0c;
+      --accent-glow: rgba(125, 78, 12, .09);
+      --accent-lit: #9c6410;
+      --on-accent: #fdf8f0;
+      --text: #1b1c22;
+      --text-dim: #64656f;
+      --text-muted: #a1a2ac;
+      --green: #15803d;
+      --red: #dc2626;
+      --red-glow: rgba(220, 38, 38, .07);
+      --warn: #b45309;
     }
 
     *,
@@ -92,8 +113,8 @@
       top: 0;
       z-index: 100;
       background: #2a1608;
-      border-bottom: 1px solid var(--warn);
-      color: var(--warn);
+      border-bottom: 1px solid #f59e0b;
+      color: #f59e0b;
       font: 700 .75rem/1 var(--sans);
       letter-spacing: .08em;
       text-align: center;
@@ -107,12 +128,45 @@
       animation: fadeUp .5s ease both;
     }
 
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
     .eyebrow {
       font: 700 .63rem/1 var(--sans);
       letter-spacing: .2em;
       text-transform: uppercase;
       color: var(--accent);
-      margin-bottom: 12px;
+    }
+
+    .theme-toggle {
+      flex-shrink: 0;
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface);
+      border: 1px solid var(--border-hi);
+      border-radius: 50%;
+      color: var(--accent-lit);
+      font-size: .95rem;
+      line-height: 1;
+      cursor: pointer;
+      transition: border-color .2s, color .2s, transform .15s;
+    }
+
+    .theme-toggle:hover { border-color: var(--accent); transform: rotate(-14deg) scale(1.06); }
+    .theme-toggle:active { transform: scale(.92); }
+
+    .theme-toggle:focus-visible {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
     }
 
     h1 {
@@ -215,7 +269,7 @@
     #btn-generate {
       padding: 11px 30px;
       background: var(--accent);
-      color: #09090c;
+      color: var(--on-accent);
       border: none;
       border-radius: var(--r);
       font: 700 .72rem/1 var(--sans);
@@ -437,7 +491,7 @@
       font: 700 .68rem/1 var(--sans);
       letter-spacing: .1em;
       text-transform: uppercase;
-      color: #09090c;
+      color: var(--on-accent);
       cursor: pointer;
       transition: background .15s;
     }
@@ -460,7 +514,10 @@
   <div class="banner">⚠️ 演練用 / SIMULATION ONLY — 內部資安意識訓練教材，非真實攻擊工具</div>
 
   <header class="header">
-    <div class="eyebrow">Phishing Simulation Content Generator</div>
+    <div class="header-top">
+      <div class="eyebrow">Phishing Simulation Content Generator</div>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="切換淺色/深色模式" aria-pressed="false" title="切換日夜模式">☾</button>
+    </div>
     <h1>釣魚演練<em>郵件產生器</em></h1>
     <div class="rule"></div>
   </header>
@@ -512,6 +569,7 @@
 
     <div class="action-row">
       <button id="btn-generate">生成演練信</button>
+      <button id="btn-random" class="btn-small" type="button">隨機組合</button>
       <span id="status"></span>
     </div>
 
@@ -709,8 +767,22 @@
     const modelSel = $('model'), scenarioSel = $('scenario'), mechanismSel = $('mechanism'),
       leverSel = $('lever'), actionSel = $('action'), difficultySel = $('difficulty'),
       countInput = $('count'), contextInput = $('context'),
-      generateBtn = $('btn-generate'), statusEl = $('status'), cardsEl = $('cards'),
+      generateBtn = $('btn-generate'), randomBtn = $('btn-random'), statusEl = $('status'), cardsEl = $('cards'),
       bottomBar = $('bottom-bar'), bottomCount = $('bottom-count'), downloadAllBtn = $('btn-download-all');
+
+    // ── 日夜模式 ──
+    const themeToggle = $('theme-toggle');
+    function applyTheme(theme) {
+      document.documentElement.dataset.theme = theme;
+      themeToggle.textContent = theme === 'light' ? '☀' : '☾';
+      themeToggle.setAttribute('aria-pressed', String(theme === 'light'));
+    }
+    applyTheme(localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'));
+    themeToggle.addEventListener('click', () => {
+      const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+      localStorage.setItem('theme', next);
+      applyTheme(next);
+    });
 
     function fillSelect(sel, pairs) {
       sel.innerHTML = pairs.map(([v, label]) => `<option value="${v}">${label}</option>`).join('');
@@ -1059,6 +1131,15 @@ ${exampleBlock}
       });
       a.click();
       URL.revokeObjectURL(a.href);
+    });
+
+    const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+    randomBtn.addEventListener('click', () => {
+      scenarioSel.value = pick(SCENARIOS.flatMap(g => g.items))[0];
+      mechanismSel.value = pick(MECHANISMS)[0];
+      leverSel.value = pick(LEVERS)[0];
+      actionSel.value = pick(ACTIONS)[0];
     });
 
     generateBtn.addEventListener('click', async () => {

@@ -24,7 +24,7 @@ app.add_middleware(
 
 MAX_FILE_SIZE = 500 * 1024 * 1024  # 500MB
 OLLAMA_BASE_URL = os.getenv("OLLAMA_URL")
-LLM_FAMILIES = ["llama", "mistral", "qwen", "gemma3", "gemma4", "phi", "deepseek", "gpt-oss"]
+LLM_FAMILIES = ["llama", "mistral", "qwen", "qwen35moe", "gemma3", "gemma4", "phi", "deepseek", "gpt-oss"]
 ENGINE = RapidOCR()
 JOBS: Dict[str, Dict[str, Any]] = {}
 JOB_EXPIRATION_SECONDS = 1 * 60 * 60

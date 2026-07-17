@@ -3,3 +3,4 @@ api/__pycache__/
 api/xlmr-classifier/
 api/title.jsonl
 .agents/
+skills-lock.json

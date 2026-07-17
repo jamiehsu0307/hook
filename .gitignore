@@ -4,3 +4,4 @@ api/xlmr-classifier/
 api/title.jsonl
 .agents/
 skills-lock.json
+.claude/

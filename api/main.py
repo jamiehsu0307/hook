@@ -270,6 +270,13 @@ async def examples():
     return FileResponse(path, media_type="application/json")
 
 # -----------------------------
+# GET /classification（前端下拉選單/卡片渲染用，資料同 /generate 驗證用的 CLASSIFICATION）
+# -----------------------------
+@app.get("/classification")
+async def classification():
+    return CLASSIFICATION
+
+# -----------------------------
 # GET /tags
 # -----------------------------
 @app.get("/tags")

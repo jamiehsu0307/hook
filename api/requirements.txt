@@ -6,3 +6,4 @@ docling[all]
 python-multipart
 rapidocr-onnxruntime
 aiofiles
+pytest

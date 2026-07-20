@@ -36,9 +36,10 @@ to already exist.
 
 ## Usage
 
-Once running, open `/` (served from `api/index.html`) to use the generator,
-or `/docs` for the full API surface (query, tags, system-prompt, ingest
-endpoints).
+Once running, open `/` (served from `api/index.html`) to use the generator.
+The auto-generated API docs (`/docs`, `/redoc`, `/openapi.json`) are disabled;
+see `api/main.py` for the full API surface (generate, classification, tags,
+ingest endpoints).
 
 ## Docs
 

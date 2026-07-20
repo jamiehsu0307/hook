@@ -13,7 +13,7 @@ from pydantic import BaseModel, field_validator
 
 load_dotenv()
 
-app = FastAPI()
+app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 
 app.add_middleware(
     CORSMiddleware,
@@ -25,7 +25,17 @@ app.add_middleware(
 
 MAX_FILE_SIZE = 500 * 1024 * 1024  # 500MB
 OLLAMA_BASE_URL = os.getenv("OLLAMA_URL")
-LLM_FAMILIES = ["llama", "mistral", "qwen", "qwen35moe", "gemma3", "gemma4", "phi", "deepseek", "gpt-oss"]
+LLM_FAMILIES = [
+    "llama",
+    "mistral",
+    "qwen",
+    "qwen35moe",
+    "gemma3",
+    "gemma4",
+    "phi",
+    "deepseek",
+    "gpt-oss",
+]
 ENGINE = RapidOCR()
 JOBS: Dict[str, Dict[str, Any]] = {}
 JOB_EXPIRATION_SECONDS = 1 * 60 * 60
@@ -38,8 +48,12 @@ CLASSIFICATION = json.loads(Path("./classification.json").read_text(encoding="ut
 EXAMPLES_DATA = json.loads(Path("./examples.json").read_text(encoding="utf-8"))
 SYSTEM_PROMPT = Path("./system_prompt.md").read_text(encoding="utf-8")
 
-SCENARIO_KEYS = [item[0] for group in CLASSIFICATION["scenarios"] for item in group["items"]]
-SCENARIO_LABELS = {item[0]: item[1] for group in CLASSIFICATION["scenarios"] for item in group["items"]}
+SCENARIO_KEYS = [
+    item[0] for group in CLASSIFICATION["scenarios"] for item in group["items"]
+]
+SCENARIO_LABELS = {
+    item[0]: item[1] for group in CLASSIFICATION["scenarios"] for item in group["items"]
+}
 MECHANISM_KEYS = [m[0] for m in CLASSIFICATION["mechanisms"]]
 LEVER_KEYS = [l[0] for l in CLASSIFICATION["levers"]]
 ACTION_KEYS = [a[0] for a in CLASSIFICATION["actions"]]
@@ -53,7 +67,14 @@ _VALID_CLASSIFICATION_KEYS = {
 
 MAX_NUM_PREDICT = 4096  # 前端截斷重試固定送 3000；夾上限防止誇張值造成資源濫用
 
-async def process_document(job_id: str, temp_path: str, original_filename: str, content_type: str, file_size: int):
+
+async def process_document(
+    job_id: str,
+    temp_path: str,
+    original_filename: str,
+    content_type: str,
+    file_size: int,
+):
     try:
         JOBS[job_id]["status"] = "processing"
         JOBS[job_id]["progress"] = 20
@@ -72,7 +93,7 @@ async def process_document(job_id: str, temp_path: str, original_filename: str, 
             "filename": original_filename,
             "content_type": content_type,
             "size_bytes": file_size,
-            "text": result
+            "text": result,
         }
 
     except Exception as e:
@@ -84,16 +105,19 @@ async def process_document(job_id: str, temp_path: str, original_filename: str, 
         if temp_path and os.path.exists(temp_path):
             os.remove(temp_path)
 
+
 async def cleanup_loop():
     while True:
         remove_expired_job()
         await asyncio.sleep(JOB_NEXT_CLEANING_SECONDS)
+
 
 def remove_expired_job():
     now = time.time()
     for job_id in list(JOBS.keys()):
         if now - JOBS[job_id]["timestamp"] > JOB_EXPIRATION_SECONDS:
             del JOBS[job_id]
+
 
 def convert(source: str):
     images = []
@@ -128,18 +152,20 @@ def convert(source: str):
                 top = min(y_coords)
                 bottom = max(y_coords)
 
-                data.append({
-                    "text": text.strip(),
-                    "left": left,
-                    "right": right,
-                    "top": top,
-                    "bottom": bottom,
-                    "x": (left + right) / 2,
-                    "y": (top + bottom) / 2,
-                    "width": right - left,
-                    "height": bottom - top,
-                    "score": score
-                })
+                data.append(
+                    {
+                        "text": text.strip(),
+                        "left": left,
+                        "right": right,
+                        "top": top,
+                        "bottom": bottom,
+                        "x": (left + right) / 2,
+                        "y": (top + bottom) / 2,
+                        "width": right - left,
+                        "height": bottom - top,
+                        "score": score,
+                    }
+                )
 
             if not data:
                 all_pages_text.append("")
@@ -171,7 +197,9 @@ def convert(source: str):
                     columns.append([item])
 
             # Sort columns from right to left
-            columns = sorted(columns, key=lambda col: -statistics.mean([c["x"] for c in col]))
+            columns = sorted(
+                columns, key=lambda col: -statistics.mean([c["x"] for c in col])
+            )
 
             page_lines = []
 
@@ -192,7 +220,9 @@ def convert(source: str):
                         lines.append([item])
 
                 # --- Step 3: sort words in each line left-to-right ---
-                lines = sorted(lines, key=lambda line: statistics.mean([l["top"] for l in line]))
+                lines = sorted(
+                    lines, key=lambda line: statistics.mean([l["top"] for l in line])
+                )
 
                 prev_line_y = None
                 for line in lines:
@@ -202,7 +232,10 @@ def convert(source: str):
                     current_y = statistics.mean([l["top"] for l in line])
 
                     # Insert paragraph break if vertical gap is large
-                    if prev_line_y is not None and (current_y - prev_line_y) > paragraph_gap_threshold:
+                    if (
+                        prev_line_y is not None
+                        and (current_y - prev_line_y) > paragraph_gap_threshold
+                    ):
                         page_lines.append("")
 
                     page_lines.append(line_text)
@@ -215,39 +248,44 @@ def convert(source: str):
             page_text = "\n".join(page_lines)
 
             # Merge hyphenated line breaks: "informa-\ntion" -> "information"
-            page_text = re.sub(r'(\w)-\n(\w)', r'\1\2', page_text)
+            page_text = re.sub(r"(\w)-\n(\w)", r"\1\2", page_text)
 
             # Remove excessive blank lines
-            page_text = re.sub(r'\n{3,}', '\n\n', page_text).strip()
+            page_text = re.sub(r"\n{3,}", "\n\n", page_text).strip()
 
             all_pages_text.append(page_text)
     except Exception as e:
         print(e)
     return "".join(all_pages_text)
 
+
 def is_pdf(file_path):
-    with open(file_path, 'rb') as f:
+    with open(file_path, "rb") as f:
         header = f.read(4)
-        return header == b'%PDF'
-    
+        return header == b"%PDF"
+
+
 def is_image(file_path):
     try:
         Image.open(file_path)
         return True
     except IOError:
         return False
-    
+
+
 def detect_file_type(file_path):
     if is_pdf(file_path):
-        return 'PDF'
+        return "PDF"
     elif is_image(file_path):
-        return 'Image'
+        return "Image"
     else:
-        return 'Unknown'
+        return "Unknown"
+
 
 @app.on_event("startup")
 def startup_event():
     asyncio.create_task(cleanup_loop())
+
 
 # -----------------------------
 # GET /classification（前端下拉選單/卡片渲染用，資料同 /generate 驗證用的 CLASSIFICATION）
@@ -255,6 +293,7 @@ def startup_event():
 @app.get("/classification")
 async def classification():
     return CLASSIFICATION
+
 
 # -----------------------------
 # GET /tags
@@ -285,6 +324,7 @@ async def tags():
     result["models"] = filtered_models
     return result
 
+
 # -----------------------------
 # 共用 streaming helper（thinking 能力檢查 + SSE 轉發）
 # -----------------------------
@@ -292,7 +332,9 @@ async def stream_ollama_chat(payload: dict) -> StreamingResponse:
     is_thinking = False
     try:
         async with httpx.AsyncClient(timeout=5) as client:
-            show = await client.post(f"{OLLAMA_BASE_URL}/api/show", json={"name": payload.get("model", "")})
+            show = await client.post(
+                f"{OLLAMA_BASE_URL}/api/show", json={"name": payload.get("model", "")}
+            )
             is_thinking = "thinking" in show.json().get("capabilities", [])
     except Exception:
         pass
@@ -326,6 +368,7 @@ async def stream_ollama_chat(payload: dict) -> StreamingResponse:
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache"},
     )
+
 
 # -----------------------------
 # POST /generate — guardrails 由後端組裝，client 只能從驗證過的參數集合選
@@ -379,9 +422,20 @@ def build_schema() -> dict:
             "red_flags": {"type": "array", "items": {"type": "string"}, "minItems": 1},
         },
         "required": [
-            "scenario", "delivery_mechanism", "social_engineering_lever", "desired_action",
-            "difficulty", "lever_manifestation", "subject", "sender_display_name", "sender_address",
-            "body", "link_text", "callback_number", "oauth_app_name", "red_flags",
+            "scenario",
+            "delivery_mechanism",
+            "social_engineering_lever",
+            "desired_action",
+            "difficulty",
+            "lever_manifestation",
+            "subject",
+            "sender_display_name",
+            "sender_address",
+            "body",
+            "link_text",
+            "callback_number",
+            "oauth_app_name",
+            "red_flags",
         ],
     }
 
@@ -419,29 +473,35 @@ lever_manifestation 用一句話說明 body 如何體現該槓桿。mechanism �
 
 
 def build_user_prompt(req: "GenerateRequest") -> str:
-    example = next((e for e in EXAMPLES_DATA if e.get("delivery_mechanism") == req.mechanism), None)
+    example = next(
+        (e for e in EXAMPLES_DATA if e.get("delivery_mechanism") == req.mechanism), None
+    )
     example_block = (
         json.dumps(example, ensure_ascii=False, indent=2)
         if example
         else "（此傳遞手法無對應範例，請直接依規則與 JSON Schema 產生。）"
     )
-    spec_block = "\n".join([
-        f"scenario: {req.scenario}（{SCENARIO_LABELS.get(req.scenario, '')}）",
-        f"delivery_mechanism: {req.mechanism}",
-        f"social_engineering_lever: {req.lever}",
-        f"desired_action: {req.action}",
-        f"difficulty: {req.difficulty}",
-        f"context: {req.context or '（無特別指定）'}",
-    ])
+    spec_block = "\n".join(
+        [
+            f"scenario: {req.scenario}（{SCENARIO_LABELS.get(req.scenario, '')}）",
+            f"delivery_mechanism: {req.mechanism}",
+            f"social_engineering_lever: {req.lever}",
+            f"desired_action: {req.action}",
+            f"difficulty: {req.difficulty}",
+            f"context: {req.context or '（無特別指定）'}",
+        ]
+    )
 
-    return "\n\n".join([
-        "<task>依下列規格產生 1 封繁體中文演練釣魚信。</task>",
-        f"<spec>\n{spec_block}\n</spec>",
-        _ENUMS_BLOCK,
-        _CONSTRAINTS_BLOCK,
-        _OUTPUT_FORMAT_BLOCK,
-        f"<example>\n{example_block}\n</example>",
-    ])
+    return "\n\n".join(
+        [
+            "<task>依下列規格產生 1 封繁體中文演練釣魚信。</task>",
+            f"<spec>\n{spec_block}\n</spec>",
+            _ENUMS_BLOCK,
+            _CONSTRAINTS_BLOCK,
+            _OUTPUT_FORMAT_BLOCK,
+            f"<example>\n{example_block}\n</example>",
+        ]
+    )
 
 
 @app.post("/generate")
@@ -459,6 +519,7 @@ async def generate(req: GenerateRequest):
         payload["options"] = {"num_predict": req.options.num_predict}
     return await stream_ollama_chat(payload)
 
+
 # -----------------------------
 # GET /ingest/{job_id}/status
 # -----------------------------
@@ -473,6 +534,7 @@ async def get_ingest_status(job_id: str):
         "status": job["status"],
         "progress": job.get("progress"),
     }
+
 
 # -----------------------------
 # GET /ingest/{job_id}/result
@@ -490,10 +552,11 @@ async def get_ingest_result(job_id: str):
         return {
             "job_id": job_id,
             "status": job["status"],
-            "message": "Result not ready yet"
+            "message": "Result not ready yet",
         }
 
     return job["result"]
+
 
 # -----------------------------
 # POST /ingest
@@ -521,7 +584,7 @@ async def ingest_document(file: UploadFile = File(...)):
             "stage": "uploaded",
             "result": None,
             "error": None,
-            "timestamp": time.time()
+            "timestamp": time.time(),
         }
 
         asyncio.create_task(
@@ -544,11 +607,12 @@ async def ingest_document(file: UploadFile = File(...)):
             os.remove(temp_path)
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get("/")
 async def index():
     return FileResponse("index.html")
 
+
 @app.get("/style.css")
 async def style():
     return FileResponse("style.css", media_type="text/css")
-

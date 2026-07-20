@@ -178,90 +178,9 @@
       callback: { link: false, tracking: false, callback: true, oauth: false, qr: false },
     };
 
-    // 5 個範例（task.md §6.2 <example>），依 mechanism 匹配後作為 few-shot 帶入 prompt
-    const EXAMPLES = [
-      {
-        scenario: "saas_login_alert", delivery_mechanism: "link", social_engineering_lever: "urgency",
-        desired_action: "enter_credentials", difficulty: 1,
-        lever_manifestation: "全篇以「24 小時內未完成驗證即永久停權」反覆製造急迫感，逼使用者不加思索立即點擊連結。",
-        subject: "【重要】偵測到異常登入，請於24小時內完成身分驗證！！",
-        sender_display_name: "Microsoft 帳戶安全中心",
-        sender_address: "security-alert@micros0ft-support.example.com",
-        body: "親愛的用戶，\n\n您的帳戶於今日凌晨在不明地點被偵測到異常登入嘗試。為保護您的帳戶安全，請立即點擊下方連結完成身分驗證。\n\n若未於24小時內完成驗證，您的帳戶將被永久停權，所有資料將無法復原！！\n\n{{TRACKING_URL}}\n\nMicrosoft 帳戶安全團隊 敬上",
-        link_text: "立即驗證帳戶", callback_number: "", oauth_app_name: "",
-        red_flags: [
-          "寄件網域為 micros0ft-support.example.com（0 取代 o 的 lookalike），非官方 microsoft.com 網域",
-          "使用「親愛的用戶」等通用稱呼，未指名道姓",
-          "以「24 小時內未驗證即永久停權」製造強烈時間壓力",
-          "結尾使用「！！」等誇張標點，語氣不符官方通知慣例",
-          "要求直接點擊連結輸入帳密驗證身分，官方通知不會如此要求",
-        ],
-      },
-      {
-        scenario: "collab_mention", delivery_mechanism: "oauth_consent", social_engineering_lever: "authority",
-        desired_action: "approve_oauth", difficulty: 2,
-        lever_manifestation: "假冒 IT 資訊安全處以官方政策口吻要求員工立即授權第三方應用程式存取帳號，利用職權施壓、不容質疑。",
-        subject: "「IT 資訊安全處」通知：Slack 協作工具權限升級驗證",
-        sender_display_name: "IT 資訊安全處",
-        sender_address: "it-security@corp-workspace.example.com",
-        body: "您好，\n\n因應公司資安政策更新，所有 Slack 使用者須於本週內完成第三方應用程式「WorkSync Connector」的權限授權，以維持協作工具正常運作。\n\n請點擊下方連結完成授權：\n{{TRACKING_URL}}\n\n如未於期限內完成，您的協作工具帳號權限將受影響。\n\nIT 資訊安全處",
-        link_text: "前往授權頁面", callback_number: "", oauth_app_name: "WorkSync Connector",
-        red_flags: [
-          "寄件網域為示意 lookalike（corp-workspace.example.com），非公司真實網域",
-          "僅以部門名稱「IT 資訊安全處」署名，無具體聯絡窗口或人員",
-          "要求授權一個來源不明的第三方 App「WorkSync Connector」存取帳號",
-          "以「不完成將影響帳號權限」施加權威壓力，且未提供人工查證管道",
-        ],
-      },
-      {
-        scenario: "account_suspension", delivery_mechanism: "callback", social_engineering_lever: "fear",
-        desired_action: "call_number", difficulty: 2,
-        lever_manifestation: "以帳號遭系統偵測到違規使用、即將停權為由，觸發使用者對權益受損的恐懼，促使立即回撥電話「確認身份」。",
-        subject: "帳號異常使用警示：如未處理將於 48 小時後停權",
-        sender_display_name: "企業帳戶服務中心",
-        sender_address: "account-service@corp-portal.example.com",
-        body: "您好，\n\n系統偵測到您的帳號有異常使用情形，為保障您的權益，請於 48 小時內回撥 0800-123-456 與客服人員確認身份。\n\n逾期未處理，您的帳號將依規定暫停使用，需另行申請復原。\n\n企業帳戶服務中心",
-        link_text: "", callback_number: "0800-123-456", oauth_app_name: "",
-        red_flags: [
-          "官方帳戶服務不會僅以電話回撥方式要求確認身份",
-          "未指名具體違規內容，僅籠統稱「異常使用情形」",
-          "以停權作為要脅施加恐懼與壓力，且期限刻意壓縮至 48 小時",
-          "寄件網域為示意網域（corp-portal.example.com），非公司內部網域",
-          "未提供任何官方替代管道（如公司內部系統）供員工自行查證",
-        ],
-      },
-      {
-        scenario: "ceo_urgent_request", delivery_mechanism: "bec_no_payload", social_engineering_lever: "trust",
-        desired_action: "reply", difficulty: 3,
-        lever_manifestation: "假借與員工熟識的執行長口吻，以簡短、個人化、看似出差中匆忙撰寫的語氣建立信任感，誘導對方直接回信協助處理事項，全程不使用連結或附件以降低戒心。",
-        subject: "Re: 這件事先別讓其他人知道",
-        sender_display_name: "David Chen",
-        sender_address: "david.chen@corp-holdings.example.com",
-        body: "我現在在機場趕飛機，方便的話先回信給我，這件事先別讓其他人知道，我等等落地再詳細說明，謝謝。",
-        link_text: "", callback_number: "", oauth_app_name: "",
-        red_flags: [
-          "寄件網域為示意 lookalike（corp-holdings.example.com），與正常內部網域不完全一致",
-          "以「先別讓其他人知道」刻意阻斷員工向他人求證或通報的機會",
-          "全程未提供任何可供查證的具體事項，僅以匆忙語氣要求員工直接回信配合",
-        ],
-      },
-      {
-        scenario: "delivery_issue", delivery_mechanism: "qr_code", social_engineering_lever: "curiosity",
-        desired_action: "scan_qr", difficulty: 1,
-        lever_manifestation: "以「包裹地址有誤、內含商品待確認」引發好奇心，誘導使用者掃描 QR code 一探究竟並重新確認個資。",
-        subject: "您的包裹因地址問題無法配送，內含商品待確認",
-        sender_display_name: "快遞包裹通知中心",
-        sender_address: "notice@express-delivery.example.com",
-        body: "您好，\n\n您的包裹因收件地址資訊有誤，目前無法完成配送。請掃描下方 QR Code（連結：{{TRACKING_URL}}）確認並更新收件地址，逾期未處理包裹將退回原廠。\n\n[QR Code（演練佔位）]\n\n快遞包裹通知中心",
-        link_text: "掃描 QR Code 確認地址", callback_number: "", oauth_app_name: "",
-        red_flags: [
-          "寄件網域為示意網域（express-delivery.example.com），非任何真實物流業者官方網域",
-          "未提供包裹追蹤編號等可供查證的具體資訊",
-          "以模糊的「地址問題」搭配「逾期將退回」製造急迫感與好奇心",
-          "要求透過來路不明的 QR Code 重新確認個資，而非官方 App 或官網查詢",
-        ],
-      },
-    ];
+    // 範例（task.md §6.2 <example>）改由 GET /examples 讀取 api/examples.json，
+    // 依 mechanism 匹配後作為 few-shot 帶入 prompt；理由同 SYSTEM_PROMPT：方便日後持續新增範例
+    let EXAMPLES = [];
 
     const SCENARIO_LABELS = Object.fromEntries(SCENARIOS.flatMap(g => g.items));
 
@@ -317,8 +236,16 @@
       return res.text();
     }
 
+    async function loadExamples() {
+      const res = await fetch('/examples');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    }
+
     (async () => {
-      const [tagsRes, promptRes] = await Promise.allSettled([loadTags(), loadSystemPrompt()]);
+      const [tagsRes, promptRes, examplesRes] = await Promise.allSettled(
+        [loadTags(), loadSystemPrompt(), loadExamples()]
+      );
 
       if (tagsRes.status === 'fulfilled') {
         const models = tagsRes.value.models ?? [];
@@ -333,6 +260,13 @@
         SYSTEM_PROMPT = promptRes.value;
       } else {
         console.error('無法載入 /system-prompt：', promptRes.reason);
+      }
+
+      if (examplesRes.status === 'fulfilled') {
+        EXAMPLES = examplesRes.value;
+      } else {
+        // 找不到範例時 buildUserPrompt() 已有 fallback 文字（見下方），不阻擋生成
+        console.error('無法載入 /examples：', examplesRes.reason);
       }
     })();
 

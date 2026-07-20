@@ -1,0 +1,82 @@
+{
+  "scenarios": [
+    { "group": "帳號 / IT 安全", "items": [
+      ["password_reset", "密碼即將到期，需重設"],
+      ["saas_login_alert", "偵測到異常/陌生裝置登入"],
+      ["mfa_reenroll", "MFA 需重新設定/驗證"],
+      ["mailbox_quota", "信箱容量已滿，需清理否則停用"],
+      ["account_suspension", "帳號違規將被停用"],
+      ["security_policy_update", "資安政策更新，需重新登入確認"]
+    ]},
+    { "group": "HR / 人資", "items": [
+      ["hr_benefit", "福利/年終/獎金相關確認"],
+      ["payroll_update", "薪資帳戶資料需確認/更新"],
+      ["performance_review", "績效考核表單需填寫"],
+      ["policy_ack", "新規範/員工手冊需簽署確認"],
+      ["org_survey", "員工問卷/滿意度調查"]
+    ]},
+    { "group": "財務 / 供應商", "items": [
+      ["invoice_payment", "逾期發票/待付款"],
+      ["vendor_bank_change", "供應商變更收款帳號（典型 BEC）"],
+      ["expense_reimburse", "費用報銷/退款"],
+      ["purchase_order", "採購訂單確認"],
+      ["tax_document", "稅務文件/扣繳憑單"]
+    ]},
+    { "group": "主管 / BEC", "items": [
+      ["ceo_urgent_request", "假冒主管緊急交辦（轉帳/機密）"],
+      ["confidential_project", "機密專案/併購，要求保密勿聲張"],
+      ["gift_card_request", "主管要求代購禮品卡"]
+    ]},
+    { "group": "外部服務 / 品牌", "items": [
+      ["cloud_doc_share", "有人分享文件給你（SharePoint/Drive/DocuSign）"],
+      ["collab_mention", "協作工具通知（被 @ 或指派任務）"],
+      ["subscription_renew", "訂閱到期/付款失敗"],
+      ["delivery_issue", "包裹配送地址有誤"],
+      ["calendar_invite", "會議邀請需接受/加入"]
+    ]},
+    { "group": "內部營運 / 一般", "items": [
+      ["it_helpdesk", "IT 服務台通知"],
+      ["internal_announce", "內部系統上線/一般公告"],
+      ["voicemail_notification", "語音留言通知"],
+      ["printer_scan", "掃描件已送達（多功能事務機）"]
+    ]}
+  ],
+  "mechanisms": [
+    ["link", "連結導向假登入頁"],
+    ["attachment", "惡意附件"],
+    ["qr_code", "QR code 釣魚（quishing）"],
+    ["bec_no_payload", "純文字社交，無連結無附件"],
+    ["callback", "回撥假客服電話（TOAD）"],
+    ["oauth_consent", "誘導授權第三方 App"]
+  ],
+  "levers": [
+    ["urgency", "製造時間壓力"],
+    ["authority", "假冒有權者或官方"],
+    ["fear", "觸發損失或懲罰恐懼"],
+    ["curiosity", "引發好奇"],
+    ["greed", "以獎金退款利誘"],
+    ["trust", "冒用熟悉的人或品牌"]
+  ],
+  "actions": [
+    ["click_link", "點擊連結"],
+    ["enter_credentials", "輸入帳號密碼"],
+    ["open_attachment", "開啟附件"],
+    ["scan_qr", "掃描 QR Code"],
+    ["reply", "直接回信"],
+    ["call_number", "回撥電話"],
+    ["approve_oauth", "授權第三方應用程式"]
+  ],
+  "difficulties": [
+    ["1", "L1 明顯 — 錯誤網域、通用稱呼、強烈急迫"],
+    ["2", "L2 中等 — lookalike 網域、情境合理"],
+    ["3", "L3 細膩 — 個人化口吻、破綻最少"]
+  ],
+  "mech_rules": {
+    "link": { "link": true, "tracking": true, "callback": false, "oauth": false, "qr": false },
+    "attachment": { "link": true, "tracking": true, "callback": false, "oauth": false, "qr": false },
+    "qr_code": { "link": true, "tracking": true, "callback": false, "oauth": false, "qr": true },
+    "oauth_consent": { "link": true, "tracking": true, "callback": false, "oauth": true, "qr": false },
+    "bec_no_payload": { "link": false, "tracking": false, "callback": false, "oauth": false, "qr": false },
+    "callback": { "link": false, "tracking": false, "callback": true, "oauth": false, "qr": false }
+  }
+}

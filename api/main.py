@@ -1,6 +1,6 @@
-from fastapi import FastAPI, Request, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, PlainTextResponse, FileResponse
+from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.concurrency import run_in_threadpool
 from dotenv import load_dotenv
 from pathlib import Path
@@ -250,26 +250,6 @@ def startup_event():
     asyncio.create_task(cleanup_loop())
 
 # -----------------------------
-# GET /system-prompt
-# -----------------------------
-@app.get("/system-prompt")
-async def system_prompt():
-    path = Path("./system_prompt.md")
-    if not path.exists():
-        raise HTTPException(status_code=404, detail="system_prompt.md not found")
-    return PlainTextResponse(path.read_text(encoding="utf-8"))
-
-# -----------------------------
-# GET /examples
-# -----------------------------
-@app.get("/examples")
-async def examples():
-    path = Path("./examples.json")
-    if not path.exists():
-        raise HTTPException(status_code=404, detail="examples.json not found")
-    return FileResponse(path, media_type="application/json")
-
-# -----------------------------
 # GET /classification（前端下拉選單/卡片渲染用，資料同 /generate 驗證用的 CLASSIFICATION）
 # -----------------------------
 @app.get("/classification")
@@ -306,7 +286,7 @@ async def tags():
     return result
 
 # -----------------------------
-# 共用 streaming helper（thinking 能力檢查 + SSE 轉發，/query 與 /generate 共用）
+# 共用 streaming helper（thinking 能力檢查 + SSE 轉發）
 # -----------------------------
 async def stream_ollama_chat(payload: dict) -> StreamingResponse:
     is_thinking = False
@@ -346,14 +326,6 @@ async def stream_ollama_chat(payload: dict) -> StreamingResponse:
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache"},
     )
-
-# -----------------------------
-# POST /query (Streaming SSE) — 純轉發，零驗證，繞過管道；Phase 4 移除
-# -----------------------------
-@app.post("/query")
-async def query(request: Request):
-    payload = await request.json()
-    return await stream_ollama_chat(payload)
 
 # -----------------------------
 # POST /generate — guardrails 由後端組裝，client 只能從驗證過的參數集合選

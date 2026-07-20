@@ -5,3 +5,4 @@ api/title.jsonl
 .agents/
 skills-lock.json
 .claude/
+.playwright-mcp/

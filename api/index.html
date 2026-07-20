@@ -86,103 +86,10 @@
   </main>
 
   <script>
-    // ── 靜態資料（對應 task.md §6.1/§6.2/§5.1/§7/§8） ──
+    // ── 分類資料（改由 GET /classification 讀取 api/classification.json，前後端共用同一份） ──
 
-    // System prompt 改由 GET /system-prompt 讀取 api/system_prompt.md，避免兩邊內容各自維護、漂移不同步
-    let SYSTEM_PROMPT = '';
-
-    const SCENARIOS = [
-      { group: '帳號 / IT 安全', items: [
-        ['password_reset', '密碼即將到期，需重設'],
-        ['saas_login_alert', '偵測到異常/陌生裝置登入'],
-        ['mfa_reenroll', 'MFA 需重新設定/驗證'],
-        ['mailbox_quota', '信箱容量已滿，需清理否則停用'],
-        ['account_suspension', '帳號違規將被停用'],
-        ['security_policy_update', '資安政策更新，需重新登入確認'],
-      ]},
-      { group: 'HR / 人資', items: [
-        ['hr_benefit', '福利/年終/獎金相關確認'],
-        ['payroll_update', '薪資帳戶資料需確認/更新'],
-        ['performance_review', '績效考核表單需填寫'],
-        ['policy_ack', '新規範/員工手冊需簽署確認'],
-        ['org_survey', '員工問卷/滿意度調查'],
-      ]},
-      { group: '財務 / 供應商', items: [
-        ['invoice_payment', '逾期發票/待付款'],
-        ['vendor_bank_change', '供應商變更收款帳號（典型 BEC）'],
-        ['expense_reimburse', '費用報銷/退款'],
-        ['purchase_order', '採購訂單確認'],
-        ['tax_document', '稅務文件/扣繳憑單'],
-      ]},
-      { group: '主管 / BEC', items: [
-        ['ceo_urgent_request', '假冒主管緊急交辦（轉帳/機密）'],
-        ['confidential_project', '機密專案/併購，要求保密勿聲張'],
-        ['gift_card_request', '主管要求代購禮品卡'],
-      ]},
-      { group: '外部服務 / 品牌', items: [
-        ['cloud_doc_share', '有人分享文件給你（SharePoint/Drive/DocuSign）'],
-        ['collab_mention', '協作工具通知（被 @ 或指派任務）'],
-        ['subscription_renew', '訂閱到期/付款失敗'],
-        ['delivery_issue', '包裹配送地址有誤'],
-        ['calendar_invite', '會議邀請需接受/加入'],
-      ]},
-      { group: '內部營運 / 一般', items: [
-        ['it_helpdesk', 'IT 服務台通知'],
-        ['internal_announce', '內部系統上線/一般公告'],
-        ['voicemail_notification', '語音留言通知'],
-        ['printer_scan', '掃描件已送達（多功能事務機）'],
-      ]},
-    ];
-
-    const MECHANISMS = [
-      ['link', '連結導向假登入頁'],
-      ['attachment', '惡意附件'],
-      ['qr_code', 'QR code 釣魚（quishing）'],
-      ['bec_no_payload', '純文字社交，無連結無附件'],
-      ['callback', '回撥假客服電話（TOAD）'],
-      ['oauth_consent', '誘導授權第三方 App'],
-    ];
-
-    const LEVERS = [
-      ['urgency', '製造時間壓力'],
-      ['authority', '假冒有權者或官方'],
-      ['fear', '觸發損失或懲罰恐懼'],
-      ['curiosity', '引發好奇'],
-      ['greed', '以獎金退款利誘'],
-      ['trust', '冒用熟悉的人或品牌'],
-    ];
-
-    const ACTIONS = [
-      ['click_link', '點擊連結'],
-      ['enter_credentials', '輸入帳號密碼'],
-      ['open_attachment', '開啟附件'],
-      ['scan_qr', '掃描 QR Code'],
-      ['reply', '直接回信'],
-      ['call_number', '回撥電話'],
-      ['approve_oauth', '授權第三方應用程式'],
-    ];
-
-    const DIFFICULTIES = [
-      ['1', 'L1 明顯 — 錯誤網域、通用稱呼、強烈急迫'],
-      ['2', 'L2 中等 — lookalike 網域、情境合理'],
-      ['3', 'L3 細膩 — 個人化口吻、破綻最少'],
-    ];
-
-    // §5.1 mechanism 相依欄位對應表
-    const MECH_RULES = {
-      link: { link: true, tracking: true, callback: false, oauth: false, qr: false },
-      attachment: { link: true, tracking: true, callback: false, oauth: false, qr: false },
-      qr_code: { link: true, tracking: true, callback: false, oauth: false, qr: true },
-      oauth_consent: { link: true, tracking: true, callback: false, oauth: true, qr: false },
-      bec_no_payload: { link: false, tracking: false, callback: false, oauth: false, qr: false },
-      callback: { link: false, tracking: false, callback: true, oauth: false, qr: false },
-    };
-
-    // 範例（task.md §6.2 <example>）改由 GET /examples 讀取 api/examples.json，
-    // 依 mechanism 匹配後作為 few-shot 帶入 prompt；理由同 SYSTEM_PROMPT：方便日後持續新增範例
-    let EXAMPLES = [];
-
-    const SCENARIO_LABELS = Object.fromEntries(SCENARIOS.flatMap(g => g.items));
+    let SCENARIOS = [], MECHANISMS = [], LEVERS = [], ACTIONS = [], DIFFICULTIES = [],
+      MECH_RULES = {}, SCENARIO_LABELS = {};
 
     // ── DOM 初始化 ──
 
@@ -219,32 +126,20 @@
       ).join('');
     }
 
-    fillScenarioSelect();
-    fillSelect(mechanismSel, MECHANISMS);
-    fillSelect(leverSel, LEVERS);
-    fillSelect(actionSel, ACTIONS);
-    fillSelect(difficultySel, DIFFICULTIES);
-
     async function loadTags() {
       const res = await fetch('/tags');
       return res.json();
     }
 
-    async function loadSystemPrompt() {
-      const res = await fetch('/system-prompt');
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return res.text();
-    }
-
-    async function loadExamples() {
-      const res = await fetch('/examples');
+    async function loadClassification() {
+      const res = await fetch('/classification');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res.json();
     }
 
     (async () => {
-      const [tagsRes, promptRes, examplesRes] = await Promise.allSettled(
-        [loadTags(), loadSystemPrompt(), loadExamples()]
+      const [tagsRes, classificationRes] = await Promise.allSettled(
+        [loadTags(), loadClassification()]
       );
 
       if (tagsRes.status === 'fulfilled') {
@@ -256,104 +151,24 @@
         modelSel.innerHTML = '<option value="">無法連線至 API</option>';
       }
 
-      if (promptRes.status === 'fulfilled') {
-        SYSTEM_PROMPT = promptRes.value;
-      } else {
-        console.error('無法載入 /system-prompt：', promptRes.reason);
-      }
+      if (classificationRes.status === 'fulfilled') {
+        ({ scenarios: SCENARIOS, mechanisms: MECHANISMS, levers: LEVERS, actions: ACTIONS,
+          difficulties: DIFFICULTIES, mech_rules: MECH_RULES } = classificationRes.value);
+        SCENARIO_LABELS = Object.fromEntries(SCENARIOS.flatMap(g => g.items));
 
-      if (examplesRes.status === 'fulfilled') {
-        EXAMPLES = examplesRes.value;
+        fillScenarioSelect();
+        fillSelect(mechanismSel, MECHANISMS);
+        fillSelect(leverSel, LEVERS);
+        fillSelect(actionSel, ACTIONS);
+        fillSelect(difficultySel, DIFFICULTIES);
       } else {
-        // 找不到範例時 buildUserPrompt() 已有 fallback 文字（見下方），不阻擋生成
-        console.error('無法載入 /examples：', examplesRes.reason);
+        console.error('無法載入 /classification：', classificationRes.reason);
       }
     })();
 
     function setStatus(msg, cls = '') {
       statusEl.textContent = msg;
       statusEl.className = cls;
-    }
-
-    // ── Prompt / Schema 組裝（對應 task.md §5 / §5.1 / §6.1 / §6.2） ──
-
-    function buildSchema() {
-      return {
-        type: 'object',
-        properties: {
-          scenario: { type: 'string', enum: SCENARIOS.flatMap(g => g.items.map(i => i[0])) },
-          delivery_mechanism: { type: 'string', enum: MECHANISMS.map(m => m[0]) },
-          social_engineering_lever: { type: 'string', enum: LEVERS.map(l => l[0]) },
-          desired_action: { type: 'string', enum: ACTIONS.map(a => a[0]) },
-          difficulty: { type: 'integer', enum: [1, 2, 3] },
-          lever_manifestation: { type: 'string' },
-          subject: { type: 'string' },
-          sender_display_name: { type: 'string' },
-          sender_address: { type: 'string' },
-          body: { type: 'string' },
-          link_text: { type: 'string' },
-          callback_number: { type: 'string' },
-          oauth_app_name: { type: 'string' },
-          red_flags: { type: 'array', items: { type: 'string' }, minItems: 1 },
-        },
-        required: ['scenario', 'delivery_mechanism', 'social_engineering_lever', 'desired_action',
-          'difficulty', 'lever_manifestation', 'subject', 'sender_display_name', 'sender_address',
-          'body', 'link_text', 'callback_number', 'oauth_app_name', 'red_flags'],
-      };
-    }
-
-    function buildUserPrompt(p) {
-      // ponytail: 只帶「mechanism 完全匹配」的單一範例，不塞全部 5 個，省 token 且避免不相關範例干擾
-      const example = EXAMPLES.find(e => e.delivery_mechanism === p.mechanism);
-      const exampleBlock = example
-        ? JSON.stringify(example, null, 2)
-        : '（此傳遞手法無對應範例，請直接依規則與 JSON Schema 產生。）';
-
-      return `<task>依下列規格產生 1 封繁體中文演練釣魚信。</task>
-
-<spec>
-scenario: ${p.scenario}（${SCENARIO_LABELS[p.scenario] || ''}）
-delivery_mechanism: ${p.mechanism}
-social_engineering_lever: ${p.lever}
-desired_action: ${p.action}
-difficulty: ${p.difficulty}
-context: ${p.context || '（無特別指定）'}
-</spec>
-
-<enums>
-social_engineering_lever（六選一）：
-  urgency=製造時間壓力 / authority=假冒有權者或官方 / fear=觸發損失或懲罰恐懼 /
-  curiosity=引發好奇 / greed=以獎金退款利誘 / trust=冒用熟悉的人或品牌
-desired_action（擇一）：
-  click_link / enter_credentials / open_attachment / scan_qr / reply / call_number / approve_oauth
-delivery_mechanism（擇一）：
-  link / attachment / qr_code / bec_no_payload / callback / oauth_consent
-</enums>
-
-<constraints>
-1. body 必須真正體現指定的 lever 並誘導指定的 action，不可名實不符。
-2. 依 difficulty 調整破綻明顯度，至少保留 1 個可教學破綻。
-3. 連結一律用 {{TRACKING_URL}}；寄件與連結網域用示意網域（*.example.com 或 lookalike）。
-4. 【衝突處理－簡單版】若 delivery_mechanism 與 desired_action 矛盾，以 delivery_mechanism 為準，
-   自動調整 action 並在 red_flags 之外不另報錯。範例：
-   - bec_no_payload（無連結無附件）→ action 收斂為 reply 或 call_number，不得用 click_link。
-   - qr_code → action 對應 scan_qr。
-   - oauth_consent → action 對應 approve_oauth。
-5. 【mechanism 相依欄位】link_text / callback_number / oauth_app_name 依下列規則填寫，不適用的欄位填空字串 ""：
-   - link / attachment / qr_code / oauth_consent：填 link_text，body 含 {{TRACKING_URL}}。
-   - oauth_consent 另外要填 oauth_app_name（示意第三方 App 名稱）。
-   - callback：填 callback_number（示意電話），body 不含 {{TRACKING_URL}}。
-   - bec_no_payload：link_text / callback_number / oauth_app_name 皆留空，body 不含 {{TRACKING_URL}}。
-</constraints>
-
-<output_format>
-只輸出 JSON，不要 markdown 圍欄，欄位依指定的 JSON Schema。四個分類欄位回填指定值，
-lever_manifestation 用一句話說明 body 如何體現該槓桿。mechanism 相依欄位依上述規則填寫或留空。
-</output_format>
-
-<example>
-${exampleBlock}
-</example>`;
     }
 
     // ── SSE 串流 / JSON 解析 ──
@@ -372,20 +187,12 @@ ${exampleBlock}
     }
 
     async function streamQuery(model, params, onThinking, options) {
-      const payload = {
-        model,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: buildUserPrompt(params) },
-        ],
-        stream: true,
-        format: buildSchema(),
-      };
+      const payload = { model, ...params };
       if (options) payload.options = options;
 
       let resp;
       try {
-        resp = await fetch('/query', {
+        resp = await fetch('/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -583,7 +390,6 @@ ${exampleBlock}
     generateBtn.addEventListener('click', async () => {
       const model = modelSel.value;
       if (!model) { alert('請先選擇模型'); return; }
-      if (!SYSTEM_PROMPT) { alert('System Prompt 尚未載入完成，請稍後再試或重新整理頁面'); return; }
 
       const count = Math.min(5, Math.max(1, parseInt(countInput.value, 10) || 1));
       const params = {
@@ -613,8 +419,7 @@ ${exampleBlock}
 
     // ── 最小自我檢查（ponytail: 無測試框架，手動於 console 執行 __selfTest() 驗證核心邏輯） ──
     window.__selfTest = function () {
-      console.assert(Object.keys(MECH_RULES).length === 6, 'MECH_RULES 應涵蓋 6 種 mechanism');
-      console.assert(buildSchema().required.length === 14, 'schema 應有 14 個 required 欄位');
+      console.assert(Object.keys(MECH_RULES).length === 6, 'MECH_RULES 應涵蓋 6 種 mechanism（需等 /classification 載入完成才能執行本檢查）');
       console.assert(stripJsonFence('```json\n{"a":1}\n```') === '{"a":1}', 'fence 剝除失敗');
       console.assert(classifyParseFailure('{"a": 1, "b": ') === 'truncated', '應判定為 truncated');
       console.assert(classifyParseFailure('我無法協助生成此類內容。') === 'refused', '應判定為 refused');

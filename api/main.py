@@ -237,6 +237,16 @@ async def system_prompt():
     return PlainTextResponse(path.read_text(encoding="utf-8"))
 
 # -----------------------------
+# GET /examples
+# -----------------------------
+@app.get("/examples")
+async def examples():
+    path = Path("./examples.json")
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="examples.json not found")
+    return FileResponse(path, media_type="application/json")
+
+# -----------------------------
 # GET /tags
 # -----------------------------
 @app.get("/tags")

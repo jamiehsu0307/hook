@@ -7,6 +7,7 @@ from pathlib import Path
 from rapidocr import RapidOCR
 from pdf2image import convert_from_path
 from PIL import Image
+import opencc
 import os, re, time, uuid, httpx, aiofiles, tempfile, asyncio, traceback, statistics, json
 from typing import Dict, Any, Literal, Optional
 from pydantic import BaseModel, field_validator
@@ -37,6 +38,7 @@ LLM_FAMILIES = [
     "gpt-oss",
 ]
 ENGINE = RapidOCR()
+TRADITIONAL_CONVERTER = opencc.OpenCC("s2twp.json")
 JOBS: Dict[str, Dict[str, Any]] = {}
 JOB_EXPIRATION_SECONDS = 1 * 60 * 60
 JOB_NEXT_CLEANING_SECONDS = 10 * 60
@@ -361,7 +363,7 @@ async def stream_ollama_chat(payload: dict) -> StreamingResponse:
                 async for line in response.aiter_lines():
                     if not line.strip():
                         continue
-                    yield f"data: {line}\n\n"
+                    yield f"data: {TRADITIONAL_CONVERTER.convert(line)}\n\n"
 
     return StreamingResponse(
         event_generator(),

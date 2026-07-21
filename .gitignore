@@ -2,6 +2,7 @@ api/.env
 api/__pycache__/
 api/xlmr-classifier/
 api/title.jsonl
+api/static/
 .agents/
 skills-lock.json
 .claude/

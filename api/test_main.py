@@ -39,6 +39,10 @@ def test_invalid_difficulty_returns_422():
     assert client.post("/generate", json=_payload(difficulty=9)).status_code == 422
 
 
+def test_traditional_converter_converts_simplified_chars():
+    assert main.TRADITIONAL_CONVERTER.convert("简体字") == "簡體字"
+
+
 def test_schema_red_flags_min_items():
     assert main.build_schema()["properties"]["red_flags"]["minItems"] == 1
 

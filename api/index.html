@@ -83,13 +83,31 @@
       <span id="bottom-count"></span>
       <button class="btn-dl" id="btn-download-all">下載全部 JSON</button>
     </div>
+
+    <div class="rule"></div>
+    <div class="eyebrow">Knowledge Graph Triple Classifier</div>
+
+    <div class="form-grid">
+      <div class="field span-2">
+        <div class="lbl"><span class="lbl-dot"></span>三元組 JSON（subject/predicate/object 陣列，1–50 筆）</div>
+        <textarea id="triples" rows="6"
+          placeholder='[{"subject":"輝達","predicate":"採購","object":"台積電"}]'></textarea>
+      </div>
+    </div>
+
+    <div class="action-row">
+      <button id="btn-classify">分類</button>
+      <span id="classify-status"></span>
+    </div>
+
+    <div id="classify-results"></div>
   </main>
 
   <script>
     // ── 分類資料（改由 GET /classification 讀取 api/classification.json，前後端共用同一份） ──
 
     let SCENARIOS = [], MECHANISMS = [], LEVERS = [], ACTIONS = [], DIFFICULTIES = [],
-      MECH_RULES = {}, SCENARIO_LABELS = {};
+      MECH_RULES = {}, SCENARIO_LABELS = {}, MECHANISM_LABELS = {}, LEVER_LABELS = {}, ACTION_LABELS = {};
 
     // ── DOM 初始化 ──
 
@@ -155,6 +173,9 @@
         ({ scenarios: SCENARIOS, mechanisms: MECHANISMS, levers: LEVERS, actions: ACTIONS,
           difficulties: DIFFICULTIES, mech_rules: MECH_RULES } = classificationRes.value);
         SCENARIO_LABELS = Object.fromEntries(SCENARIOS.flatMap(g => g.items));
+        MECHANISM_LABELS = Object.fromEntries(MECHANISMS);
+        LEVER_LABELS = Object.fromEntries(LEVERS);
+        ACTION_LABELS = Object.fromEntries(ACTIONS);
 
         fillScenarioSelect();
         fillSelect(mechanismSel, MECHANISMS);
@@ -415,6 +436,86 @@
       const failCount = cardStates.filter(s => s.status === 'error').length;
       setStatus(failCount ? `完成，${failCount} 封失敗可個別重試` : '完成', failCount ? 'err' : 'done');
       generateBtn.disabled = false;
+    });
+
+    // ── 三元組分類（獨立功能，跟上面的生成流程不共用狀態，只共用 model 清單/樣式） ──
+
+    const triplesInput = $('triples'),
+      classifyBtn = $('btn-classify'), classifyStatusEl = $('classify-status'), classifyResultsEl = $('classify-results');
+
+    function setClassifyStatus(msg, cls = '') {
+      classifyStatusEl.textContent = msg;
+      classifyStatusEl.className = cls;
+    }
+
+    const SIGNAL_LABEL = { strong: '訊號強', weak: '訊號弱（近似猜測）' };
+    const CLASSIFY_FIELD_LABELS = { scenario: '情境', mechanism: '手法', lever: '槓桿', action: '動作' };
+
+    function renderClassifyResult(item) {
+      const card = el('div', 'card');
+      if (item.signal_strength === 'weak') card.classList.add('is-error'); // 借用既有的左側警示色條標示低信心結果
+
+      const labelLookup = { scenario: SCENARIO_LABELS, mechanism: MECHANISM_LABELS, lever: LEVER_LABELS, action: ACTION_LABELS };
+
+      const badges = el('div', 'card-badges');
+      Object.entries(CLASSIFY_FIELD_LABELS).forEach(([field, label]) => {
+        const badge = el('span', 'badge', `${label}: ${item[field]}`);
+        badge.title = labelLookup[field][item[field]] || '';
+        badges.appendChild(badge);
+      });
+      badges.appendChild(el('span', 'badge', SIGNAL_LABEL[item.signal_strength] || item.signal_strength));
+      card.appendChild(badges);
+
+      card.appendChild(el('div', 'card-subject', `${item.subject} — ${item.predicate} — ${item.object}`));
+      card.appendChild(el('div', 'card-body', item.reasoning));
+
+      return card;
+    }
+
+    async function runClassify(model, triples) {
+      classifyBtn.disabled = true;
+      setClassifyStatus('分類中…', 'running');
+      classifyResultsEl.innerHTML = '';
+
+      try {
+        const resp = await fetch('/classify_triples', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model, triples }),
+        });
+        if (!resp.ok) {
+          const body = await resp.json().catch(() => ({}));
+          throw new Error(body.detail || `HTTP ${resp.status}`);
+        }
+        const results = await resp.json();
+        results.forEach(item => classifyResultsEl.appendChild(renderClassifyResult(item)));
+        setClassifyStatus(`完成，共 ${results.length} 筆`, 'done');
+      } catch (e) {
+        // thinking 模型大批次下可能因思考過久吃光 context、内容被截斷而分類失敗——
+        // 機率性問題，重試一次多半就過（不是每次都會踩到）。
+        setClassifyStatus(`分類失敗：${e.message}`, 'err');
+        const retryBtn = el('button', 'btn-small', '重試');
+        retryBtn.addEventListener('click', () => runClassify(model, triples));
+        classifyResultsEl.appendChild(retryBtn);
+      } finally {
+        classifyBtn.disabled = false;
+      }
+    }
+
+    classifyBtn.addEventListener('click', () => {
+      const model = modelSel.value;
+      if (!model) { alert('請先選擇模型'); return; }
+
+      let triples;
+      try {
+        triples = JSON.parse(triplesInput.value);
+        if (!Array.isArray(triples) || !triples.length) throw new Error('必須是非空陣列');
+      } catch (e) {
+        alert(`三元組 JSON 格式錯誤：${e.message}`);
+        return;
+      }
+
+      runClassify(model, triples);
     });
 
     // ── 最小自我檢查（ponytail: 無測試框架，手動於 console 執行 __selfTest() 驗證核心邏輯） ──

@@ -1,0 +1,252 @@
+[
+  {
+    "subject": "陳副總",
+    "predicate": "職位",
+    "object": "財務長"
+  },
+  {
+    "subject": "供應商甲",
+    "predicate": "要求",
+    "object": "變更匯款銀行帳號"
+  },
+  {
+    "subject": "IT部門",
+    "predicate": "發布",
+    "object": "密碼原則更新公告"
+  },
+  {
+    "subject": "王小華",
+    "predicate": "訂閱",
+    "object": "Adobe 年繳方案"
+  },
+  {
+    "subject": "台灣分公司",
+    "predicate": "舉辦",
+    "object": "年度員工滿意度調查"
+  },
+  {
+    "subject": "快遞公司",
+    "predicate": "通知",
+    "object": "包裹地址無法配送"
+  },
+  {
+    "subject": "鴻海",
+    "predicate": "成立",
+    "object": "1974年"
+  },
+  {
+    "subject": "會議系統",
+    "predicate": "寄送",
+    "object": "本週五會議邀請"
+  },
+  {
+    "subject": "IT客服",
+    "predicate": "通知",
+    "object": "帳號異常登入"
+  },
+  {
+    "subject": "資訊安全處",
+    "predicate": "要求",
+    "object": "重新設定多因子驗證"
+  },
+  {
+    "subject": "系統管理員",
+    "predicate": "發送",
+    "object": "信箱容量已滿通知"
+  },
+  {
+    "subject": "人資系統",
+    "predicate": "提醒",
+    "object": "帳號即將停用"
+  },
+  {
+    "subject": "人資部",
+    "predicate": "發布",
+    "object": "年終獎金確認表單"
+  },
+  {
+    "subject": "薪資系統",
+    "predicate": "通知",
+    "object": "銀行帳戶資料待確認"
+  },
+  {
+    "subject": "主管",
+    "predicate": "指派",
+    "object": "績效考核表填寫"
+  },
+  {
+    "subject": "總務處",
+    "predicate": "發布",
+    "object": "員工手冊簽署通知"
+  },
+  {
+    "subject": "會計部",
+    "predicate": "提醒",
+    "object": "逾期發票待付款"
+  },
+  {
+    "subject": "供應商乙",
+    "predicate": "寄送",
+    "object": "採購訂單確認信"
+  },
+  {
+    "subject": "稅務單位",
+    "predicate": "寄發",
+    "object": "扣繳憑單通知"
+  },
+  {
+    "subject": "員工",
+    "predicate": "申請",
+    "object": "差旅費用報銷"
+  },
+  {
+    "subject": "執行長",
+    "predicate": "交辦",
+    "object": "緊急機密轉帳事項"
+  },
+  {
+    "subject": "併購小組",
+    "predicate": "通知",
+    "object": "機密專案保密要求"
+  },
+  {
+    "subject": "副總經理",
+    "predicate": "要求",
+    "object": "代購禮品卡"
+  },
+  {
+    "subject": "客戶",
+    "predicate": "分享",
+    "object": "SharePoint 文件連結"
+  },
+  {
+    "subject": "Slack",
+    "predicate": "通知",
+    "object": "被標記於任務討論"
+  },
+  {
+    "subject": "Netflix",
+    "predicate": "通知",
+    "object": "訂閱付款失敗"
+  },
+  {
+    "subject": "物流公司",
+    "predicate": "通知",
+    "object": "包裹配送地址錯誤"
+  },
+  {
+    "subject": "Google日曆",
+    "predicate": "寄送",
+    "object": "會議邀請通知"
+  },
+  {
+    "subject": "IT服務台",
+    "predicate": "發布",
+    "object": "系統維護公告"
+  },
+  {
+    "subject": "總機",
+    "predicate": "轉達",
+    "object": "語音留言通知"
+  },
+  {
+    "subject": "事務機",
+    "predicate": "通知",
+    "object": "掃描文件已送達"
+  },
+  {
+    "subject": "公司內部",
+    "predicate": "發布",
+    "object": "新政策上線公告"
+  },
+  {
+    "subject": "台積電",
+    "predicate": "總部位於",
+    "object": "新竹科學園區"
+  },
+  {
+    "subject": "郭台銘",
+    "predicate": "創辦",
+    "object": "鴻海精密"
+  },
+  {
+    "subject": "輝達",
+    "predicate": "股票代號",
+    "object": "NVDA"
+  },
+  {
+    "subject": "特斯拉",
+    "predicate": "執行長",
+    "object": "馬斯克"
+  },
+  {
+    "subject": "蘋果公司",
+    "predicate": "總部位於",
+    "object": "加州庫比蒂諾"
+  },
+  {
+    "subject": "微軟",
+    "predicate": "創辦人",
+    "object": "比爾蓋茲"
+  },
+  {
+    "subject": "台灣",
+    "predicate": "首都",
+    "object": "台北"
+  },
+  {
+    "subject": "亞馬遜",
+    "predicate": "創辦人",
+    "object": "貝佐斯"
+  },
+  {
+    "subject": "Meta",
+    "predicate": "前身名稱",
+    "object": "Facebook"
+  },
+  {
+    "subject": "OpenAI",
+    "predicate": "開發",
+    "object": "ChatGPT"
+  },
+  {
+    "subject": "三星電子",
+    "predicate": "總部位於",
+    "object": "韓國首爾"
+  },
+  {
+    "subject": "中華電信",
+    "predicate": "主要業務",
+    "object": "電信服務"
+  },
+  {
+    "subject": "鴻海",
+    "predicate": "員工人數",
+    "object": "約82萬人"
+  },
+  {
+    "subject": "台達電",
+    "predicate": "主要產品",
+    "object": "電源供應器"
+  },
+  {
+    "subject": "聯發科",
+    "predicate": "主要產品",
+    "object": "手機晶片"
+  },
+  {
+    "subject": "統一企業",
+    "predicate": "主要業務",
+    "object": "食品飲料"
+  },
+  {
+    "subject": "中鋼",
+    "predicate": "主要業務",
+    "object": "鋼鐵製造"
+  },
+  {
+    "subject": "長榮海運",
+    "predicate": "主要業務",
+    "object": "貨櫃航運"
+  }
+]
